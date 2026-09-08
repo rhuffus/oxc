@@ -1715,6 +1715,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "oxc-markdown-parser"
+version = "0.0.0"
+source = "git+https://github.com/oxc-project/oxc-markdown-parser?rev=cf0a36e00c78f3917ee6ea7a524193a799ee5150#cf0a36e00c78f3917ee6ea7a524193a799ee5150"
+dependencies = [
+ "oxc_allocator",
+]
+
+[[package]]
 name = "oxc-schemars"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2136,6 +2144,23 @@ dependencies = [
  "oxc_syntax",
  "oxc_tasks_common",
  "pico-args",
+]
+
+[[package]]
+name = "oxc_formatter_markdown"
+version = "0.0.0"
+dependencies = [
+ "cow-utils",
+ "insta",
+ "oxc-markdown-parser",
+ "oxc_allocator",
+ "oxc_diagnostics",
+ "oxc_formatter_core",
+ "oxc_formatter_tests",
+ "oxc_span",
+ "oxc_tasks_common",
+ "pico-args",
+ "serde_json",
 ]
 
 [[package]]

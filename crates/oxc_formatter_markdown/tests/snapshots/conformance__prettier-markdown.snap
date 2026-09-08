@@ -1,0 +1,47 @@
+---
+source: crates/oxc_formatter_markdown/tests/conformance.rs
+expression: report
+---
+markdown compatibility: 1225/1262 (97.07%), 0 files skipped
+
+# Failed
+
+| Spec path | Failed or Passed | Match ratio |
+| :-------- | :--------------: | :---------: |
+| markdown/commonmark-test-suite/snippet: example-11.md (Tabs) | 💥 | 0.00% |
+| markdown/commonmark-test-suite/snippet: example-2.md (Tabs) | 💥 | 0.00% |
+| markdown/commonmark-test-suite/snippet: example-50.md (Thematic breaks) | 💥 | 0.00% |
+| markdown/commonmark-test-suite/snippet: example-51.md (Thematic breaks) | 💥 | 0.00% |
+| markdown/commonmark-test-suite/snippet: example-52.md (Thematic breaks) | 💥 | 0.00% |
+| markdown/commonmark-test-suite/snippet: example-53.md (Thematic breaks) | 💥 | 0.00% |
+| markdown/commonmark-test-suite/snippet: example-54.md (Thematic breaks) | 💥 | 0.00% |
+| markdown/footnoteDefinition/long.md | 💥💥💥💥 | 40.67% |
+| markdown/footnoteDefinition/multiline.md | 💥💥💥💥 | 90.82% |
+| markdown/footnoteDefinition/sibling.md | 💥💥💥💥 | 87.50% |
+| markdown/gfm-test-suite/snippet: example-199.md (4.10 Tables (extension)) | 💥 | 33.33% |
+| markdown/gfm-test-suite/snippet: example-200.md (4.10 Tables (extension)) | 💥 | 25.00% |
+| markdown/gfm-test-suite/snippet: example-202.md (4.10 Tables (extension)) | 💥 | 83.33% |
+| markdown/gfm-test-suite/snippet: example-491.md (6.5 Strikethrough (extension)) | 💥 | 0.00% |
+| markdown/ignore/top-level-range.md | 💥 | 85.71% |
+| markdown/link/encodedLink.md | 💥 | 86.67% |
+| markdown/liquid/character-after-closing-tokens.md | 💥✨ | 41.18% |
+| markdown/liquid/example-1.md | 💥✨ | 43.48% |
+| markdown/liquid/example-2.md | 💥💥 | 90.48% |
+| markdown/long-table/long-table.md | 💥💥 | 46.15% |
+| markdown/paragraph/cjk.md | 💥💥✨ | 63.16% |
+| markdown/splitCjkText/chinese-japanese.md | 💥 | 88.89% |
+| markdown/splitCjkText/space.md | 💥 | 0.00% |
+| markdown/splitCjkText/symbolSpaceNewLine.md | 💥 | 43.24% |
+| markdown/table/align.md | 💥 | 0.00% |
+| markdown/table/cjk.md | 💥 | 33.33% |
+| markdown/table/emoji.md | 💥 | 33.33% |
+| markdown/table/empty.md | 💥 | 0.00% |
+| markdown/table/escape.md | 💥 | 25.00% |
+| markdown/table/html.md | 💥 | 0.00% |
+| markdown/table/simple.md | 💥 | 33.33% |
+| markdown/table/table.md | 💥 | 36.84% |
+| markdown/table/empty-table/empty-table.md | 💥💥💥💥 | 72.73% |
+| markdown/thematicBreak/simple.md | 💥 | 0.00% |
+| markdown/wiki-link/exceeds-line-length-in-prose-broken.md | 💥💥💥✨ | 0.00% |
+| markdown/wiki-link/multi-line.md | 💥💥💥✨ | 38.89% |
+| markdown/wiki-link/nested-link.md | 💥💥✨✨ | 0.00% |
