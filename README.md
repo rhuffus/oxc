@@ -1,3 +1,5 @@
+> **Fork de rhuffus para validaciones NestJS.** Consulta la [guía del fork](forks/nestjs/README.md) para compilar, instalar los paquetes de macOS Apple Silicon y consultar el estado de las reglas. La primera versión prepara la distribución y todavía no añade reglas NestJS.
+
 <p align="center">
   <br>
   <br>
