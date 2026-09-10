@@ -1,0 +1,165 @@
+name: Release NestJS fork
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Positive fork revision, for example 1"
+        type: string
+        required: true
+        default: "1"
+      publish:
+        description: "Publish the verified package as a GitHub prerelease"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nestjs-release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build and verify darwin-arm64 package
+    if: github.repository == 'rhuffus/oxc'
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      FORK_REVISION: ${{ inputs.revision }}
+    outputs:
+      version: ${{ steps.build.outputs.version }}
+      tag: ${{ steps.build.outputs.tag }}
+      tarball: ${{ steps.build.outputs.tarball }}
+    steps:
+      - name: Check out the dispatched commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          architecture: arm64
+          package-manager-cache: false
+
+      - name: Validate the revision and runner
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          assert.match(process.env.FORK_REVISION ?? '', /^[1-9][0-9]*$/, 'revision must be a positive integer');
+          assert.equal(process.platform, 'darwin', 'the package must be built on macOS');
+          assert.equal(process.arch, 'arm64', 'the package must be built with arm64 Node.js');
+          NODE
+          test "$(uname -m)" = arm64
+
+      - name: Set up the pnpm version from package.json
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          run_install: false
+          cache: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set up the Rust toolchain from rust-toolchain.toml
+        run: |
+          rustup show active-toolchain
+          rustup target add aarch64-apple-darwin
+          rustc --version --verbose
+          cargo --version
+
+      - name: Build the npm wrapper and native addon
+        id: build
+        run: node forks/nestjs/build-package.mjs "$FORK_REVISION"
+
+      - name: Smoke-test the packaged addon
+        env:
+          FORK_TARBALL: ${{ steps.build.outputs.tarball }}
+        run: |
+          node forks/nestjs/smoke-package.mjs \
+            "target/nestjs-release/$FORK_TARBALL" \
+            apps/oxlint/src-js/oxlint.darwin-arm64.node
+
+      - name: Verify tracked sources remain unchanged
+        run: git diff --exit-code
+
+      # Keep verified packages available even when publish is false.
+      - name: Upload the verified release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nestjs-release-${{ steps.build.outputs.version }}
+          if-no-files-found: error
+          compression-level: 0
+          path: |
+            target/nestjs-release/${{ steps.build.outputs.tarball }}
+            target/nestjs-release/checksums.txt
+            target/nestjs-release/build-info.json
+
+  publish:
+    name: Publish GitHub prerelease
+    needs: build
+    if: github.repository == 'rhuffus/oxc' && inputs.publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      FORK_VERSION: ${{ needs.build.outputs.version }}
+      FORK_TAG: ${{ needs.build.outputs.tag }}
+      FORK_TARBALL: ${{ needs.build.outputs.tarball }}
+    steps:
+      - name: Download the verified release artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nestjs-release-${{ needs.build.outputs.version }}
+          path: release-artifacts
+
+      - name: Verify the release identity and checksums
+        working-directory: release-artifacts
+        run: |
+          [[ "$FORK_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-nestjs\.[1-9][0-9]*$ ]]
+          test "$FORK_TAG" = "oxlint-v$FORK_VERSION"
+          test "$FORK_TARBALL" = "oxlint-$FORK_VERSION.tgz"
+          test -f "$FORK_TARBALL"
+          test -f build-info.json
+          sha256sum --check --strict checksums.txt
+
+      - name: Publish a new prerelease without replacing existing tags or assets
+        working-directory: release-artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: rhuffus/oxc
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          existing_tag=$(gh api "repos/$GH_REPO/git/matching-refs/tags/$FORK_TAG" \
+            --jq ".[] | select(.ref == \"refs/tags/$FORK_TAG\") | .ref")
+          if [[ -n "$existing_tag" ]]; then
+            printf 'Tag %s already exists; choose a new revision.\n' "$FORK_TAG" >&2
+            exit 1
+          fi
+
+          notes_file="$RUNNER_TEMP/nestjs-release-notes.md"
+          {
+            printf 'Oxlint NestJS fork **%s** for macOS Apple Silicon (`darwin-arm64`).\n\n' "$FORK_VERSION"
+            printf 'The npm wrapper and native addon were built and smoke-tested from source commit `%s`.\n\n' "$SOURCE_SHA"
+            printf 'See the [fork documentation](https://github.com/%s/blob/%s/forks/nestjs/README.md) for the scope and limitations of this revision.\n\n' "$GH_REPO" "$SOURCE_SHA"
+            printf 'Assets include the npm tarball, SHA-256 checksums and build metadata.\n'
+          } > "$notes_file"
+
+          gh release create "$FORK_TAG" \
+            "$FORK_TARBALL" checksums.txt build-info.json \
+            --repo "$GH_REPO" \
+            --target "$SOURCE_SHA" \
+            --title "Oxlint NestJS fork $FORK_VERSION" \
+            --notes-file "$notes_file" \
+            --prerelease \
+            --latest=false
