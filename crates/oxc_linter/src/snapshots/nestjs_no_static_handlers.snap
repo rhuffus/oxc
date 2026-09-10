@@ -1,0 +1,164 @@
+---
+source: crates/oxc_linter/src/tester.rs
+---
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:112]
+ 1 │ import { Controller, Get } from '@nestjs/common'; @Controller() class StatusController { @Get('status') static status() { return 'ready'; } }
+   ·                                                                                                                ──────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:83]
+ 1 │ import { Get as Route } from '@nestjs/common'; class Controller { @Route() static handler() {} }
+   ·                                                                                   ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:80]
+ 1 │ import { Post as Get } from '@nestjs/common'; class Controller { @Get() static handler() {} }
+   ·                                                                                ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:85]
+ 1 │ import { 'Get' as Route } from '@nestjs/common'; class Controller { @Route() static handler() {} }
+   ·                                                                                     ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:79]
+ 1 │ import * as nest from '@nestjs/common'; class Controller { @nest.Get() static handler() {} }
+   ·                                                                               ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:84]
+ 1 │ import * as nest from '@nestjs/common'; class Controller { @(nest['Get']()) static handler() {} }
+   ·                                                                                    ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:84]
+ 1 │ import * as nest from '@nestjs/common'; class Controller { @(nest[`Get`]()) static handler() {} }
+   ·                                                                                    ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:89]
+ 1 │ import * as nest from '@nestjs/common'; class Controller { @(nest['G\u0065t']()) static handler() {} }
+   ·                                                                                         ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:76]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @((Get)()) static handler() {} }
+   ·                                                                            ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:78]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() static async handler() { return 'ready'; } }
+   ·                                                                              ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:81]
+ 1 │ import { Sse } from '@nestjs/common'; class Controller { @Sse('events') static *handler() { yield 'ready'; } }
+   ·                                                                                 ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:73]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() static ['handler']() {} }
+   ·                                                                         ─────────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:79]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() public static handler() {} }
+   ·                                                                               ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:72]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() static handler() { return this; } }
+   ·                                                                        ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:72]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() static handler(Get: string) { return Get; } }
+   ·                                                                        ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:76]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() static get handler() { return 'ready'; } }
+   ·                                                                            ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:90]
+ 1 │ import { Get, Post } from '@nestjs/common'; class Controller { @Get() @Post() static set handler(value: string) {} }
+   ·                                                                                          ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:66]
+ 1 │ import { Get } from '@nestjs/common'; class Base { @Get() static handler() {} } class Controller extends Base {}
+   ·                                                                  ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:80]
+ 1 │ import { Get } from '@nestjs/common'; const Controller = class { @Get() static handler() {} };
+   ·                                                                                ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:87]
+ 1 │ import { Get } from '@nestjs/common'; function mixin() { return class { @Get() static handler() {} }; }
+   ·                                                                                       ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:106]
+ 1 │ import { Get as Route } from '@nestjs/common'; function mixin(Get: any) { return class { @Route() static handler() {} }; }
+   ·                                                                                                          ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:97]
+ 1 │ import { Get, HttpCode } from '@nestjs/common'; class Controller { @HttpCode(200) @Get() static handler() {} }
+   ·                                                                                                 ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.
+
+  ⚠ nestjs(no-static-handlers): NestJS HTTP handlers must be instance methods.
+   ╭─[no_static_handlers.ts:1:86]
+ 1 │ import { Get, Post } from '@nestjs/common'; class Controller { @Get() @Post() static handler() {} }
+   ·                                                                                      ───────
+   ╰────
+  help: Declare this handler as an instance method and review calls through the class. NestJS discovers HTTP handlers on the instance prototype.

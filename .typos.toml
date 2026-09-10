@@ -36,6 +36,8 @@ extend-exclude = [
   "tasks/transform_conformance/snapshots",
   "napi/minify/test/terser.test.ts",
   "npm/oxlint/configuration_schema.json",
+  # Fork documentation is written in Spanish; typos only checks English.
+  "forks/nestjs/**/*.md",
 ]
 
 [default]

@@ -380,11 +380,7 @@ fn rule_descriptor(rule_id: &str, rule: &RuleEnum) -> SarifReportingDescriptor {
         name: Some(rule.name().to_string()),
         short_description: None,
         full_description: None,
-        help_uri: Some(format!(
-            "https://oxc.rs/docs/guide/usage/linter/rules/{}/{}.html",
-            rule.plugin_name(),
-            rule.name()
-        )),
+        help_uri: Some(oxc_linter::rule_documentation_url(rule.plugin_name(), rule.name())),
         properties: Some(SarifRuleProperties {
             category: rule.category().as_str().to_string(),
             plugin: rule.plugin_name().to_string(),

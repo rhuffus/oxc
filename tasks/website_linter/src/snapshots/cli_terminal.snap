@@ -1,5 +1,6 @@
 ---
 source: tasks/website_linter/src/cli.rs
+assertion_line: 16
 expression: snapshot
 ---
 Usage: [-c=<./.oxlintrc.json>] [PATH]...
@@ -50,6 +51,7 @@ Enable/Disable Plugins
         --promise-plugin      Enable the promise plugin and detect promise usage problems
         --node-plugin         Enable the node plugin and detect node usage problems
         --vue-plugin          Enable the vue plugin and detect vue usage problems
+        --nestjs-plugin       Enable the native NestJS plugin, which is turned off by default
 
 Fix Problems
         --fix                 Fix as many issues as possible. Only unfixed issues are reported in

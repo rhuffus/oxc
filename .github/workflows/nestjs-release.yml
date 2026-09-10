@@ -7,7 +7,7 @@ on:
         description: "Positive fork revision, for example 1"
         type: string
         required: true
-        default: "1"
+        default: "2"
       publish:
         description: "Publish the verified package as a GitHub prerelease"
         type: boolean
@@ -76,6 +76,9 @@ jobs:
           rustup target add aarch64-apple-darwin
           rustc --version --verbose
           cargo --version
+
+      - name: Test native rules, CLI integration and rule scaffolding
+        run: env -u NO_COLOR cargo test -p oxc_linter -p oxlint -p rulegen --all-features --locked
 
       - name: Build the npm wrapper and native addon
         id: build

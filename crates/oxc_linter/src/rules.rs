@@ -983,6 +983,11 @@ pub(crate) mod vue {
     pub mod valid_next_tick;
 }
 
+/// Native NestJS validations maintained by the rhuffus fork.
+pub(crate) mod nestjs {
+    pub mod no_static_handlers;
+}
+
 pub(crate) mod shared;
 
 // Re-export RuleEnum, RULES, and all rule type aliases from generated code

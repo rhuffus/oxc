@@ -245,8 +245,13 @@ fn rule_source(rule: &RuleTableRow) -> String {
         rule_path.push_str(".rs");
     }
 
+    let (repository, git_ref) = if rule.plugin == "nestjs" {
+        ("rhuffus/oxc", "codex/nestjs")
+    } else {
+        ("oxc-project/oxc", "${ data }")
+    };
     format!(
-        "https://github.com/oxc-project/oxc/blob/${{ data }}/crates/oxc_linter/src/rules/{rule_path}"
+        "https://github.com/{repository}/blob/{git_ref}/crates/oxc_linter/src/rules/{rule_path}"
     )
 }
 

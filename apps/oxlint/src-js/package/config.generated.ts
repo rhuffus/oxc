@@ -26,6 +26,7 @@ export type ExternalPluginEntry =
        * - promise
        * - node
        * - vue
+       * - nestjs
        * - eslint
        *
        * If you need to use the JavaScript version of any of these plugins, provide a custom alias to avoid conflicts.
@@ -56,7 +57,8 @@ export type LintPluginOptionsSchema =
   | "react-perf"
   | "promise"
   | "node"
-  | "vue";
+  | "vue"
+  | "nestjs";
 export type LintPlugins = LintPluginOptionsSchema[];
 export type RuleNoConfig = AllowWarnDeny | [AllowWarnDeny];
 export type Mode2 = "as-needed" | "always" | "never";
@@ -1092,6 +1094,7 @@ export interface DummyRuleMap {
   "max-nested-callbacks"?: RuleNoConfig | [AllowWarnDeny, MaxNestedCallbacksConfigEnum];
   "max-params"?: RuleNoConfig | [AllowWarnDeny, MaxParamsConfigEnum];
   "max-statements"?: RuleNoConfig | [AllowWarnDeny, MaxStatementsConfigEnum];
+  "nestjs/no-static-handlers"?: RuleNoConfig;
   "new-cap"?: RuleNoConfig | [AllowWarnDeny, NewCapConfig];
   "nextjs/google-font-display"?: RuleNoConfig;
   "nextjs/google-font-preconnect"?: RuleNoConfig;

@@ -1,4 +1,4 @@
-> **Fork de rhuffus para validaciones NestJS.** Consulta la [guía del fork](forks/nestjs/README.md) para compilar, instalar los paquetes de macOS Apple Silicon y consultar el estado de las reglas. La primera versión prepara la distribución y todavía no añade reglas NestJS.
+> **Fork de rhuffus para validaciones NestJS.** Desde `1.82.0-nestjs.2` incluye la regla nativa [`nestjs/no-static-handlers`](forks/nestjs/rules/no-static-handlers.md), que detecta handlers HTTP estáticos. Consulta la [guía del fork](forks/nestjs/README.md) para activarla, compilar e instalar los paquetes de macOS Apple Silicon.
 
 <p align="center">
   <br>

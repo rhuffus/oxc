@@ -86,6 +86,7 @@ copyFileSync(
 );
 copyFileSync(join(root, "LICENSE"), join(staging, "LICENSE"));
 copyFileSync(join(root, "forks/nestjs/README.md"), join(staging, "README.md"));
+cpSync(join(root, "forks/nestjs/rules"), join(staging, "rules"), { recursive: true });
 
 const info = {
   repository: "https://github.com/rhuffus/oxc",
@@ -124,7 +125,7 @@ const manifest = {
   repository: { type: "git", url: "git+https://github.com/rhuffus/oxc.git" },
   os: ["darwin"],
   cpu: ["arm64"],
-  files: [...template.files, "build-info.json", "LICENSE"],
+  files: [...template.files, "build-info.json", "LICENSE", "rules"],
 };
 delete manifest.napi;
 writeFileSync(join(staging, "package.json"), JSON.stringify(manifest, null, 2) + "\n");

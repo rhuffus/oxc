@@ -269,6 +269,15 @@ fn execute_rules<'a, const TIMINGS: bool>(
 /// Base URL for the documentation, used to generate rule documentation URLs when a diagnostic is reported.
 const WEBSITE_BASE_RULES_URL: &str = "https://oxc.rs/docs/guide/usage/linter/rules";
 
+/// Returns the documentation URL for a native rule, including rules provided by this fork.
+pub fn rule_documentation_url(plugin: &str, rule: &str) -> String {
+    if plugin == "nestjs" {
+        format!("https://github.com/rhuffus/oxc/blob/codex/nestjs/forks/nestjs/rules/{rule}.md")
+    } else {
+        format!("{WEBSITE_BASE_RULES_URL}/{plugin}/{rule}.html")
+    }
+}
+
 #[derive(Debug)]
 #[expect(clippy::struct_field_names)]
 pub struct Linter {

@@ -5550,3 +5550,9 @@ impl RuleRunner for crate::rules::vue::valid_next_tick::ValidNextTick {
     ]));
     const RUN_FUNCTIONS: RuleRunFunctionsImplemented = RuleRunFunctionsImplemented::Run;
 }
+
+impl RuleRunner for crate::rules::nestjs::no_static_handlers::NoStaticHandlers {
+    const NODE_TYPES: Option<&AstTypesBitset> =
+        Some(&AstTypesBitset::from_types(&[AstType::MethodDefinition]));
+    const RUN_FUNCTIONS: RuleRunFunctionsImplemented = RuleRunFunctionsImplemented::Run;
+}

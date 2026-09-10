@@ -758,8 +758,11 @@ mod test {
             serde_json::from_str(r#"{ "plugins": ["typescript", "unicorn"] }"#).unwrap();
         assert_eq!(config.plugins, Some(LintPlugins::TYPESCRIPT | LintPlugins::UNICORN));
         let config: Oxlintrc =
-            serde_json::from_str(r#"{ "plugins": ["typescript", "unicorn", "react", "oxc", "import", "jsdoc", "jest", "vitest", "jsx-a11y", "nextjs", "react-perf", "promise", "node", "vue"] }"#).unwrap();
+            serde_json::from_str(r#"{ "plugins": ["typescript", "unicorn", "react", "oxc", "import", "jsdoc", "jest", "vitest", "jsx-a11y", "nextjs", "react-perf", "promise", "node", "vue", "nestjs"] }"#).unwrap();
         assert_eq!(config.plugins, Some(LintPlugins::all()));
+
+        let config: Oxlintrc = serde_json::from_str(r#"{ "plugins": ["nestjs"] }"#).unwrap();
+        assert_eq!(config.plugins, Some(LintPlugins::NESTJS));
 
         let config: Oxlintrc =
             serde_json::from_str(r#"{ "plugins": ["typescript", "@typescript-eslint"] }"#).unwrap();

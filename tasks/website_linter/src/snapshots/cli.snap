@@ -1,5 +1,6 @@
 ---
 source: tasks/website_linter/src/cli.rs
+assertion_line: 8
 expression: snapshot
 ---
 ---
@@ -83,6 +84,8 @@ Arguments:
   Enable the node plugin and detect node usage problems
 - **`    --vue-plugin`** &mdash; 
   Enable the vue plugin and detect vue usage problems
+- **`    --nestjs-plugin`** &mdash; 
+  Enable the native NestJS plugin, which is turned off by default
 
 
 

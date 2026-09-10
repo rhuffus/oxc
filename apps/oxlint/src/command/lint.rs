@@ -451,6 +451,10 @@ pub struct EnablePlugins {
     /// Enable the vue plugin and detect vue usage problems
     #[bpaf(flag(OverrideToggle::Enable, OverrideToggle::NotSet), hide_usage)]
     pub vue_plugin: OverrideToggle,
+
+    /// Enable the native NestJS plugin, which is turned off by default
+    #[bpaf(flag(OverrideToggle::Enable, OverrideToggle::NotSet), hide_usage)]
+    pub nestjs_plugin: OverrideToggle,
 }
 
 /// Enables or disables a boolean option, or leaves it unset.
@@ -526,6 +530,7 @@ impl EnablePlugins {
         self.promise_plugin.inspect(|yes| plugins.set(LintPlugins::PROMISE, yes));
         self.node_plugin.inspect(|yes| plugins.set(LintPlugins::NODE, yes));
         self.vue_plugin.inspect(|yes| plugins.set(LintPlugins::VUE, yes));
+        self.nestjs_plugin.inspect(|yes| plugins.set(LintPlugins::NESTJS, yes));
     }
 }
 
@@ -563,7 +568,7 @@ pub struct InlineConfigOptions {
 mod plugins {
     use oxc_linter::LintPlugins;
 
-    use super::{EnablePlugins, OverrideToggle};
+    use super::{EnablePlugins, OverrideToggle, lint_command};
 
     #[test]
     fn test_override_default() {
@@ -598,6 +603,27 @@ mod plugins {
 
         enable.apply_overrides(&mut plugins);
         assert_eq!(plugins, expected);
+    }
+
+    #[test]
+    fn test_nestjs_plugin_flag_is_opt_in() {
+        let command = lint_command().run_inner(&["."]).unwrap();
+        assert_eq!(command.enable_plugins.nestjs_plugin, OverrideToggle::NotSet);
+        let mut plugins = LintPlugins::default();
+        command.enable_plugins.apply_overrides(&mut plugins);
+        assert!(!plugins.contains(LintPlugins::NESTJS));
+
+        let command = lint_command().run_inner(&["--nestjs-plugin", "."]).unwrap();
+        assert_eq!(command.enable_plugins.nestjs_plugin, OverrideToggle::Enable);
+        command.enable_plugins.apply_overrides(&mut plugins);
+        assert_eq!(plugins, LintPlugins::default() | LintPlugins::NESTJS);
+    }
+
+    #[test]
+    fn test_nestjs_config_plugin_is_preserved_without_flag() {
+        let mut plugins = LintPlugins::NESTJS;
+        EnablePlugins::default().apply_overrides(&mut plugins);
+        assert_eq!(plugins, LintPlugins::NESTJS);
     }
 }
 

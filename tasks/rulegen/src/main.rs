@@ -1392,6 +1392,7 @@ pub enum RuleKind {
     Promise,
     Vitest,
     Vue,
+    Nestjs,
 }
 
 impl TryFrom<&str> for RuleKind {
@@ -1414,6 +1415,7 @@ impl TryFrom<&str> for RuleKind {
             "promise" => Ok(Self::Promise),
             "vitest" => Ok(Self::Vitest),
             "vue" => Ok(Self::Vue),
+            "nestjs" => Ok(Self::Nestjs),
             _ => Err(format!("Invalid `RuleKind`, got `{value}`")),
         }
     }
@@ -1437,6 +1439,7 @@ impl Display for RuleKind {
             Self::Promise => "eslint-plugin-promise",
             Self::Vitest => "eslint-plugin-vitest",
             Self::Vue => "eslint-plugin-vue",
+            Self::Nestjs => "nestjs",
         };
         f.write_str(kind_name)
     }
@@ -1452,6 +1455,16 @@ fn main() {
     });
 
     let update_tests_only = std::env::args().any(|arg| arg == "--update-tests");
+
+    // This fork's native rules have no external ESLint implementation to fetch.
+    if matches!(rule_kind, RuleKind::Nestjs) {
+        if let Err(err) = create_native_nestjs_rule(&rule_name, update_tests_only) {
+            eprintln!("failed to create native NestJS rule: {err}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
     let kebab_rule_name = rule_name.to_case(Case::Kebab);
     let camel_rule_name = rule_name.to_case(Case::Camel);
 
@@ -1470,7 +1483,7 @@ fn main() {
         RuleKind::Promise => format!("{PROMISE_TEST_PATH}/{kebab_rule_name}.js"),
         RuleKind::Vitest => format!("{VITEST_TEST_PATH}/{kebab_rule_name}.test.ts"),
         RuleKind::Vue => format!("{VUE_TEST_PATH}/{kebab_rule_name}.test.ts"),
-        RuleKind::Oxc => String::new(),
+        RuleKind::Oxc | RuleKind::Nestjs => String::new(),
     };
     let rule_src_path = match rule_kind {
         RuleKind::ESLint => format!("{ESLINT_RULES_PATH}/{kebab_rule_name}.js"),
@@ -1487,10 +1500,10 @@ fn main() {
         RuleKind::Promise => format!("{PROMISE_RULES_PATH}/{kebab_rule_name}.js"),
         RuleKind::Vitest => format!("{VITEST_RULES_PATH}/{kebab_rule_name}.ts"),
         RuleKind::Vue => format!("{VUE_RULES_PATH}/{kebab_rule_name}.js"),
-        RuleKind::Oxc => String::new(),
+        RuleKind::Oxc | RuleKind::Nestjs => String::new(),
     };
     let language = match rule_kind {
-        RuleKind::Typescript | RuleKind::Oxc => "ts",
+        RuleKind::Typescript | RuleKind::Oxc | RuleKind::Nestjs => "ts",
         RuleKind::NextJS => "tsx",
         RuleKind::React | RuleKind::ReactPerf | RuleKind::JSXA11y => "jsx",
         _ => "js",
@@ -1693,6 +1706,88 @@ fn main() {
     }
 }
 
+fn native_nestjs_context(
+    rule_name: &str,
+    update_tests_only: bool,
+) -> Result<Context, &'static str> {
+    if update_tests_only {
+        return Err("NestJS rule tests are maintained locally; --update-tests is not supported");
+    }
+
+    let context = Context::new(
+        RuleKind::Nestjs,
+        rule_name,
+        "// TODO: Add NestJS-specific valid cases.\n\"\"".to_string(),
+        "// TODO: Add NestJS-specific invalid cases.".to_string(),
+    )
+    .with_language("ts");
+    if syn::parse_str::<syn::Ident>(&context.snake_rule_name).is_err() {
+        return Err("the NestJS rule name must produce a valid Rust module identifier");
+    }
+    Ok(context)
+}
+
+fn create_native_nestjs_rule(
+    rule_name: &str,
+    update_tests_only: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let context = native_nestjs_context(rule_name, update_tests_only)?;
+    let path = get_rule_path(RuleKind::Nestjs).join(format!("{}.rs", context.snake_rule_name));
+    if path.exists() {
+        return Err(
+            format!("Native rule '{}' already exists; edit it directly", path.display()).into()
+        );
+    }
+
+    let rules_path = "crates/oxc_linter/src/rules.rs";
+    let rules = fs::read_to_string(rules_path)?;
+    let rules = insert_native_nestjs_rule(&rules, &context.snake_rule_name)?;
+
+    template::Template::with_context(&context).render(RuleKind::Nestjs)?;
+    fs::write(rules_path, rules)?;
+    println!("Updated {rules_path}");
+    generate_rule_runner_impl()
+}
+
+/// Register local rules without relying on the upstream-import generator's insertion order.
+fn insert_native_nestjs_rule(
+    rules: &str,
+    rule_name: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    use syn::spanned::Spanned;
+
+    let file = syn::parse_file(rules)?;
+    let module = file
+        .items
+        .iter()
+        .find_map(|item| match item {
+            syn::Item::Mod(module) if module.ident == "nestjs" => Some(module),
+            _ => None,
+        })
+        .ok_or("failed to find the native nestjs module in rules.rs")?;
+    let (braces, items) = module.content.as_ref().ok_or("the nestjs module must be inline")?;
+    let mut insertion = braces.span.close().byte_range().start;
+    for item in items {
+        let syn::Item::Mod(rule) = item else { continue };
+        let existing_name = rule.ident.to_string();
+        if existing_name == rule_name {
+            return Err(format!("Native rule module '{rule_name}' is already registered").into());
+        }
+        if existing_name.as_str() > rule_name {
+            insertion = insertion.min(item.span().byte_range().start);
+        }
+    }
+
+    let line_start = rules[..insertion].rfind('\n').map_or(0, |index| index + 1);
+    let mut result = rules.to_string();
+    if rules[line_start..insertion].trim().is_empty() {
+        result.insert_str(line_start, &format!("    pub mod {rule_name};\n"));
+    } else {
+        result.insert_str(insertion, &format!("\n    pub mod {rule_name};\n"));
+    }
+    Ok(result)
+}
+
 fn generate_rule_runner_impl() -> Result<(), Box<dyn std::error::Error>> {
     use std::process::{Command, Stdio};
 
@@ -1778,6 +1873,7 @@ fn get_rule_path(rule_kind: RuleKind) -> &'static Path {
         RuleKind::Promise => Path::new("crates/oxc_linter/src/rules/promise"),
         RuleKind::Vitest => Path::new("crates/oxc_linter/src/rules/vitest"),
         RuleKind::Vue => Path::new("crates/oxc_linter/src/rules/vue"),
+        RuleKind::Nestjs => Path::new("crates/oxc_linter/src/rules/nestjs"),
     }
 }
 
@@ -1908,6 +2004,7 @@ fn get_mod_name(rule_kind: RuleKind) -> String {
         RuleKind::Vitest => "vitest".into(),
         RuleKind::Node => "node".into(),
         RuleKind::Vue => "vue".into(),
+        RuleKind::Nestjs => "nestjs".into(),
     }
 }
 
@@ -1929,6 +2026,7 @@ fn get_unsupported_rule_prefix(rule_kind: RuleKind) -> &'static str {
         RuleKind::Promise => "promise",
         RuleKind::Vitest => "vitest",
         RuleKind::Vue => "vue",
+        RuleKind::Nestjs => "nestjs",
     }
 }
 
@@ -2008,6 +2106,78 @@ fn add_rules_entry(ctx: &Context, rule_kind: RuleKind) -> Result<(), Box<dyn std
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_native_nestjs_context() {
+        let kind = RuleKind::try_from("nestjs").unwrap();
+        assert!(matches!(kind, RuleKind::Nestjs));
+        assert_eq!(kind.to_string(), "nestjs");
+        assert_eq!(get_rule_path(kind), Path::new("crates/oxc_linter/src/rules/nestjs"));
+        assert_eq!(get_unsupported_rule_prefix(kind), "nestjs");
+
+        let context = native_nestjs_context("example-rule", false).unwrap();
+        assert_eq!(context.mod_name, "nestjs");
+        assert_eq!(context.snake_rule_name, "example_rule");
+        assert_eq!(context.pascal_rule_name, "ExampleRule");
+        assert_eq!(context.language, "ts");
+        assert!(context.rule_config.is_none());
+        assert!(context.fix_cases.is_none());
+    }
+
+    #[test]
+    fn test_native_nestjs_rejects_upstream_test_updates() {
+        let error = native_nestjs_context("example-rule", true).err().unwrap();
+        assert_eq!(
+            error,
+            "NestJS rule tests are maintained locally; --update-tests is not supported"
+        );
+    }
+
+    #[test]
+    fn test_native_nestjs_rejects_invalid_module_names() {
+        for name in ["", "123", "self"] {
+            assert!(native_nestjs_context(name, false).is_err(), "{name:?}");
+        }
+    }
+
+    #[test]
+    fn test_native_nestjs_registers_rules_in_order() {
+        let source = "pub(crate) mod nestjs {\n    pub mod middle;\n}\n";
+        assert_eq!(
+            insert_native_nestjs_rule(source, "first").unwrap(),
+            "pub(crate) mod nestjs {\n    pub mod first;\n    pub mod middle;\n}\n"
+        );
+        assert_eq!(
+            insert_native_nestjs_rule(source, "last_rule").unwrap(),
+            "pub(crate) mod nestjs {\n    pub mod last_rule;\n    pub mod middle;\n}\n"
+        );
+        assert_eq!(
+            insert_native_nestjs_rule(source, "z_last").unwrap(),
+            "pub(crate) mod nestjs {\n    pub mod middle;\n    pub mod z_last;\n}\n"
+        );
+        assert!(insert_native_nestjs_rule(source, "middle").is_err());
+    }
+
+    #[test]
+    fn test_native_nestjs_registers_in_empty_module() {
+        for source in ["pub(crate) mod nestjs {\n}\n", "pub(crate) mod nestjs {}\n"] {
+            assert_eq!(
+                insert_native_nestjs_rule(source, "example_rule").unwrap(),
+                "pub(crate) mod nestjs {\n    pub mod example_rule;\n}\n"
+            );
+        }
+    }
+
+    #[test]
+    fn test_native_nestjs_requires_exact_inline_module() {
+        for source in [
+            "pub(crate) mod nestjs_extra {}\n",
+            "// mod nestjs {}\nmod eslint {}\n",
+            "pub(crate) mod nestjs;\n",
+        ] {
+            assert!(insert_native_nestjs_rule(source, "example_rule").is_err());
+        }
+    }
 
     #[test]
     fn test_find_unsupported_rule_matches() {

@@ -142,6 +142,7 @@ impl JsonSchema for ExternalPluginEntry {
                          - promise\n\
                          - node\n\
                          - vue\n\
+                         - nestjs\n\
                          - eslint\n\n\
                          If you need to use the JavaScript version of any of these plugins, \
                          provide a custom alias to avoid conflicts."

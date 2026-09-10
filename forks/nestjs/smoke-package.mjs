@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -58,8 +59,8 @@ const run = (command, args, expectedStatus = 0) => {
   );
   return output;
 };
-const lint = (config, file, expectedStatus = 0) =>
-  run("pnpm", ["exec", "oxlint", "--config", config, file], expectedStatus);
+const lint = (config, file, expectedStatus = 0, extra = []) =>
+  run("pnpm", ["exec", "oxlint", "--config", config, ...extra, file], expectedStatus);
 
 try {
   mkdirSync(consumer);
@@ -116,6 +117,7 @@ try {
   }
   assert.ok(json(join(packageRoot, "configuration_schema.json")).properties.rules);
   assert.ok(statSync(join(packageRoot, manifest.bin.oxlint)).isFile());
+  assert.ok(statSync(join(packageRoot, "rules/no-static-handlers.md")).isFile());
 
   const nativePath = join(packageRoot, "dist/oxlint.darwin-arm64.node");
   const nativeHash = sha256(nativePath);
@@ -150,6 +152,66 @@ export default defineConfig({ rules: { 'no-debugger': 'error' } })
   lint("native.config.ts", "valid.ts");
   assert.match(lint("native.config.ts", "invalid.ts", 1), /no-debugger/);
   log("PASS: TypeScript config imports defineConfig; native rule accepts and rejects fixtures");
+
+  const nestRuleName = "nestjs/no-static-handlers";
+  const catalog = JSON.parse(run("pnpm", ["exec", "oxlint", "--rules", "--format", "json"]));
+  const nestRule = catalog.find(
+    (entry) => entry.scope === "nestjs" && entry.value === "no-static-handlers",
+  );
+  assert.ok(nestRule, `The installed package must contain ${nestRuleName}`);
+  assert.equal(nestRule.category, "correctness");
+  assert.equal(nestRule.type_aware, false);
+  assert.equal(nestRule.fix, "none");
+  assert.equal(
+    nestRule.docs_url,
+    "https://github.com/rhuffus/oxc/blob/codex/nestjs/forks/nestjs/rules/no-static-handlers.md",
+  );
+  const nestCategories = Object.fromEntries(
+    ["correctness", "suspicious", "pedantic", "perf", "style", "restriction", "nursery"].map(
+      (category) => [category, "off"],
+    ),
+  );
+  write(
+    "nestjs.config.ts",
+    `import { defineConfig } from 'oxlint'\nexport default defineConfig(${JSON.stringify({ plugins: ["nestjs"], categories: nestCategories, rules: { [nestRuleName]: "error" } })})\n`,
+  );
+  // Nest is deliberately absent: this native rule resolves import bindings from the AST.
+  assert.ok(!existsSync(join(consumer, "node_modules/@nestjs/common")));
+  write(
+    "nestjs-static.ts",
+    "import { Get } from '@nestjs/common'; export class Controller { @Get() static route() { return 'ok' } }\n",
+  );
+  write(
+    "nestjs-instance.ts",
+    "import { Get } from '@nestjs/common'; export class Controller { @Get() route() { return 'ok' } }\n",
+  );
+  write(
+    "nestjs-helper.ts",
+    "import { Get } from '@nestjs/common'; export class Controller { @Get() route() { return 'ok' } static helper() { return 'ok' } }\n",
+  );
+  const staticReport = JSON.parse(
+    lint("nestjs.config.ts", "nestjs-static.ts", 1, ["--format", "json"]),
+  );
+  assert.equal(staticReport.number_of_files, 1);
+  assert.equal(staticReport.diagnostics.length, 1);
+  assert.equal(staticReport.diagnostics[0].code, "nestjs(no-static-handlers)");
+  assert.equal(staticReport.diagnostics[0].severity, "error");
+  assert.equal(staticReport.diagnostics[0].url, nestRule.docs_url);
+  for (const name of ["nestjs-instance.ts", "nestjs-helper.ts"]) {
+    const report = JSON.parse(lint("nestjs.config.ts", name, 0, ["--format", "json"]));
+    assert.equal(report.number_of_files, 1);
+    assert.deepEqual(report.diagnostics, []);
+  }
+  const beforeFix = readFileSync(join(consumer, "nestjs-static.ts"), "utf8");
+  const fixedReport = JSON.parse(
+    lint("nestjs.config.ts", "nestjs-static.ts", 1, ["--fix", "--format", "json"]),
+  );
+  assert.equal(fixedReport.diagnostics.length, 1);
+  assert.equal(fixedReport.diagnostics[0].code, "nestjs(no-static-handlers)");
+  assert.equal(readFileSync(join(consumer, "nestjs-static.ts"), "utf8"), beforeFix);
+  log(
+    "PASS: packaged native Nest rule, TypeScript config, static/instance/helper HTTP fixtures and no autofix; no Nest dependency installed",
+  );
 
   write(
     "smoke-plugin.mjs",
@@ -207,10 +269,14 @@ assert.equal(createRequire(import.meta.url)('oxlint/package.json').name, 'oxlint
     `import { defineConfig, type AllowWarnDeny, type OxlintConfig } from 'oxlint'
 import { RuleTester } from 'oxlint/plugins-dev'
 const config: OxlintConfig = defineConfig({ rules: { 'no-debugger': 'error' } })
+const nestConfig: OxlintConfig = defineConfig({ plugins: ['nestjs'], rules: { 'nestjs/no-static-handlers': 'error' } })
 const tester = new RuleTester()
 // @ts-expect-error Invalid severities must be rejected by the published declarations.
 const invalidSeverity: AllowWarnDeny = 'not-a-severity'
+// @ts-expect-error The published native Nest rule accepts no options.
+defineConfig({ plugins: ['nestjs'], rules: { 'nestjs/no-static-handlers': ['error', {}] } })
 void config
+void nestConfig
 void tester
 void invalidSeverity
 `,

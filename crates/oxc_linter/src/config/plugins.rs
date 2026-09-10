@@ -121,6 +121,8 @@ bitflags! {
         const NODE = 1 << 12;
         /// `eslint-plugin-vue`
         const VUE = 1 << 13;
+        /// Native NestJS rules provided by this fork.
+        const NESTJS = 1 << 14;
     }
 }
 
@@ -186,6 +188,7 @@ impl TryFrom<&str> for LintPlugins {
             "promise" => Ok(LintPlugins::PROMISE),
             "node" => Ok(LintPlugins::NODE),
             "vue" => Ok(LintPlugins::VUE),
+            "nestjs" => Ok(LintPlugins::NESTJS),
             // "eslint" is not really a plugin, so it's 'empty'. This has the added benefit of
             // making it the default value.
             "eslint" => Ok(LintPlugins::ESLINT),
@@ -211,6 +214,7 @@ impl From<LintPlugins> for &'static str {
             LintPlugins::PROMISE => "promise",
             LintPlugins::NODE => "node",
             LintPlugins::VUE => "vue",
+            LintPlugins::NESTJS => "nestjs",
             _ => "",
         }
     }
@@ -282,6 +286,7 @@ impl JsonSchema for LintPlugins {
             Promise,
             Node,
             Vue,
+            Nestjs,
         }
 
         let enum_schema = r#gen.subschema_for::<LintPluginOptionsSchema>();
@@ -316,6 +321,28 @@ mod tests {
         let default = LintPlugins::default();
         assert_eq!(default, LintPlugins::UNICORN | LintPlugins::TYPESCRIPT | LintPlugins::OXC);
         assert!(!default.contains(LintPlugins::REACT));
+        assert!(!default.contains(LintPlugins::NESTJS));
+    }
+
+    #[test]
+    fn test_nestjs_plugin_normalization_and_round_trip() {
+        for name in ["nestjs", "eslint-plugin-nestjs", "oxlint-plugin-nestjs"] {
+            assert_eq!(LintPlugins::try_from(name), Ok(LintPlugins::NESTJS));
+            let json = serde_json::to_string(&[name]).unwrap();
+            let plugins: LintPlugins = serde_json::from_str(&json).unwrap();
+            assert_eq!(plugins, LintPlugins::NESTJS);
+            assert_eq!(serde_json::to_string(&plugins).unwrap(), r#"["nestjs"]"#);
+        }
+        assert_eq!(LintPlugins::try_from("nest"), Err(()));
+        assert_eq!(LintPlugins::try_from("nest-js"), Err(()));
+    }
+
+    #[test]
+    fn test_nestjs_plugin_schema() {
+        let schema = schemars::schema_for!(LintPlugins);
+        let options = &schema.definitions["LintPluginOptionsSchema"];
+        let values = options.clone().into_object().enum_values.unwrap();
+        assert!(values.contains(&serde_json::json!("nestjs")));
     }
 
     #[test]
