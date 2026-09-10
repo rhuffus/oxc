@@ -1094,6 +1094,7 @@ export interface DummyRuleMap {
   "max-nested-callbacks"?: RuleNoConfig | [AllowWarnDeny, MaxNestedCallbacksConfigEnum];
   "max-params"?: RuleNoConfig | [AllowWarnDeny, MaxParamsConfigEnum];
   "max-statements"?: RuleNoConfig | [AllowWarnDeny, MaxStatementsConfigEnum];
+  "nestjs/class-methods-use-this"?: RuleNoConfig | [AllowWarnDeny, ClassMethodsUseThisConfig];
   "nestjs/no-static-handlers"?: RuleNoConfig;
   "new-cap"?: RuleNoConfig | [AllowWarnDeny, NewCapConfig];
   "nextjs/google-font-display"?: RuleNoConfig;

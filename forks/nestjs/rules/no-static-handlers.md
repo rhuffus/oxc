@@ -114,7 +114,7 @@ La ausencia de un diagnóstico en estos casos no certifica que el código sea v�
 
 ## Interacción con `class-methods-use-this`
 
-Un handler de instancia sin `this`, como el ejemplo `status()`, es válido para esta regla. Si está activa, la regla de upstream `class-methods-use-this` puede rechazarlo y sugerir un método estático, lo que entraría en conflicto con el descubrimiento de rutas. `nestjs/no-static-handlers` no modifica, exceptúa ni desactiva esa regla de upstream. La solución para esa interacción queda pendiente de la siguiente tarjeta; no debe aplicarse una conversión a `static` para satisfacerla.
+Un handler de instancia sin `this`, como el ejemplo `status()`, es válido para esta regla. Desde `1.82.0-nestjs.3`, [`nestjs/class-methods-use-this`](class-methods-use-this.md) resuelve la interacción con la regla de upstream: permite ese método HTTP y conserva la comprobación de los demás miembros. Desactiva `class-methods-use-this`, activa `nestjs/class-methods-use-this` con las mismas opciones y mantén `nestjs/no-static-handlers` activa para detectar handlers estáticos. Las dos reglas comparten el catálogo HTTP y se activan por separado; ninguna modifica ni desactiva automáticamente la regla base. Los auxiliares siguen comprobándose y getters, setters, campos de función y propiedades `accessor` no reciben la excepción HTTP.
 
 ## Comprobaciones del fork
 

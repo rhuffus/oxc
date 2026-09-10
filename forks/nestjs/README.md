@@ -1,12 +1,12 @@
 # Oxlint para NestJS — fork de rhuffus
 
-Este fork de [Oxc](https://github.com/oxc-project/oxc) incorpora validaciones de NestJS integradas en Rust. Desde `1.82.0-nestjs.2` incluye [`nestjs/no-static-handlers`](rules/no-static-handlers.md), que detecta métodos estáticos decorados como handlers HTTP. La versión `1.82.0-nestjs.1` preparó la compilación y distribución; la base de upstream sigue siendo el tag oficial `oxlint_v1.82.0`.
+Este fork de [Oxc](https://github.com/oxc-project/oxc) incorpora validaciones de NestJS integradas en Rust. Desde `1.82.0-nestjs.2` incluye [`nestjs/no-static-handlers`](rules/no-static-handlers.md), que detecta métodos estáticos decorados como handlers HTTP. Desde `1.82.0-nestjs.3`, [`nestjs/class-methods-use-this`](rules/class-methods-use-this.md) permite que esos handlers sean métodos de instancia sin usar `this`, conservando la comprobación y las opciones de upstream para los demás miembros. La versión `1.82.0-nestjs.1` preparó la compilación y distribución; la base de upstream sigue siendo el tag oficial `oxlint_v1.82.0`.
 
 La rama de trabajo es `codex/nestjs`. La rama `main` se conserva para seguir upstream. Los scripts y la documentación del fork viven en `forks/nestjs/`; sus reglas nativas están en `crates/oxc_linter/src/rules/nestjs/`.
 
-## Activar la regla HTTP
+## Activar las reglas HTTP
 
-El plugin `nestjs` se activa explícitamente. Este ejemplo de `oxlint.config.ts` conserva los plugins predeterminados de upstream y añade la regla con severidad `error`; si ya tienes una lista de plugins, añade `nestjs` a esa lista:
+El plugin `nestjs` se activa explícitamente. Este ejemplo de `oxlint.config.ts` conserva los plugins predeterminados de upstream, activa las dos reglas con severidad `error` y desactiva la regla base que sustituye la variante de NestJS. Si ya tienes una lista de plugins, añade `nestjs` a esa lista y conserva las opciones que tuviera `class-methods-use-this` al trasladarlas a `nestjs/class-methods-use-this`:
 
 ```ts
 import { defineConfig } from "oxlint";
@@ -14,14 +14,24 @@ import { defineConfig } from "oxlint";
 export default defineConfig({
   plugins: ["typescript", "unicorn", "oxc", "nestjs"],
   rules: {
+    "class-methods-use-this": "off",
+    "nestjs/class-methods-use-this": [
+      "error",
+      {
+        enforceForClassFields: true,
+        exceptMethods: [],
+        ignoreClassesWithImplements: undefined,
+        ignoreOverrideMethods: false,
+      },
+    ],
     "nestjs/no-static-handlers": "error",
   },
 });
 ```
 
-La regla pertenece a `correctness`, no admite opciones, no necesita análisis de tipos y no ofrece autofix. Reconoce los 19 decoradores HTTP de NestJS 12, sus imports con alias y los namespaces, respetando el símbolo al que se refiere cada identificador. También comprueba clases base sin `@Controller`. La [documentación de la regla](rules/no-static-handlers.md) explica ejemplos, getters/setters y formas que quedan fuera de su alcance.
+`nestjs/no-static-handlers` pertenece a `correctness` y no admite opciones. `nestjs/class-methods-use-this` pertenece a `restriction` y hereda las cuatro opciones de la regla base. Ambas usan el mismo catálogo de 19 decoradores HTTP de NestJS 12, reconocen imports con alias y namespaces, respetan el símbolo de cada identificador y comprueban clases base sin `@Controller`. No requieren análisis de tipos ni ofrecen autofix. Sus documentos explican los [handlers estáticos](rules/no-static-handlers.md) y la [excepción para métodos de instancia](rules/class-methods-use-this.md), con ejemplos y límites.
 
-Un handler de instancia válido puede no utilizar `this`. La regla de upstream `class-methods-use-this` puede rechazar ese patrón; esta primera regla de NestJS no la modifica ni la desactiva. Resolver esa interacción queda pendiente de la siguiente tarjeta.
+Desde `1.82.0-nestjs.3`, esta combinación resuelve el conflicto entre exigir `this` y mantener un handler de instancia: la variante NestJS exceptúa únicamente el método HTTP ordinario y sigue comprobando sus auxiliares. Getters, setters, campos de función y propiedades `accessor` no reciben esa excepción. La base debe permanecer en `off` para evitar sus diagnósticos y duplicidades. Cada regla se activa por separado; las categorías de la configuración también pueden activar otras reglas. La [configuración aislada de ejemplo](rules/class-methods-use-this.md#configuración-y-combinación-de-reglas) muestra cómo ejecutar exclusivamente estas dos.
 
 ## Instalar un build
 
@@ -51,18 +61,18 @@ Para reproducirlo localmente en Apple Silicon, desde la raíz del fork:
 
 ```sh
 pnpm install --frozen-lockfile
-node forks/nestjs/build-package.mjs 2
-node forks/nestjs/smoke-package.mjs target/nestjs-release/oxlint-1.82.0-nestjs.2.tgz apps/oxlint/src-js/oxlint.darwin-arm64.node
+node forks/nestjs/build-package.mjs 3
+node forks/nestjs/smoke-package.mjs target/nestjs-release/oxlint-1.82.0-nestjs.3.tgz apps/oxlint/src-js/oxlint.darwin-arm64.node
 ```
 
 Los archivos de salida están en `target/nestjs-release/`. El empaquetador restaura los cargadores fuente después de generar el bundle específico de esta plataforma. Las futuras actualizaciones de upstream deben revisar el empaquetado y repetir estas pruebas. Añadir otras plataformas requerirá builds y paquetes específicos.
 
-## Verificar la regla
+## Verificar las reglas
 
-Las pruebas nativas cubren 160 casos de reconocimiento y exclusión. Para ejecutarlas desde la raíz del fork:
+Las pruebas nativas comprueban el reconocimiento y las exclusiones de los decoradores, la política de los miembros ordinarios y las opciones heredadas. `no-static-handlers` conserva sus 160 casos de reconocimiento y exclusión. Para ejecutar las pruebas de NestJS desde la raíz del fork:
 
 ```sh
-cargo test -p oxc_linter no_static_handlers
+cargo test -p oxc_linter nestjs
 ```
 
 Con el wrapper de Oxlint compilado y las dependencias del demo ya instaladas, el harness comprueba el catálogo, esquema, tipos, diagnósticos y modos de fix. También arranca una aplicación NestJS real en un puerto efímero: el método de instancia responde HTTP 200, el estático produce HTTP 404 y su llamada directa en JavaScript funciona. El consumidor temporal y el servidor se limpian al terminar; el demo se utiliza para resolver dependencias y no se modifica:
@@ -75,6 +85,6 @@ node forks/nestjs/test-http-handlers.mjs \
 
 ## Desarrollo de reglas y posible contribución upstream
 
-Antes de cada regla acordaremos el comportamiento, excepciones justificadas y posibilidad de autofix. Sus tests deben incluir patrones reales de NestJS y casos que no deben producir diagnósticos. La primera regla implementada es `nestjs/no-static-handlers`; la política de `class-methods-use-this` sigue pendiente de revisión conjunta.
+Antes de cada regla acordaremos el comportamiento, excepciones justificadas y posibilidad de autofix. Sus tests deben incluir patrones reales de NestJS y casos que no deben producir diagnósticos. Las primeras reglas cubren los handlers HTTP estáticos y la excepción de `class-methods-use-this` para sus métodos de instancia; los demás contratos de NestJS se revisarán por separado.
 
 Un PR al proyecto oficial puede proponerse más adelante, pero la [guía de contribución](https://oxc.rs/docs/contribute/linter/adding-rules.html) pide discutir previamente los nuevos grupos de reglas en Rust y actualmente prioriza plugins JavaScript para nuevos grupos. No hay compromiso de aceptación. Prepararemos cambios acotados, tests y documentación, separando la infraestructura de distribución del fork de las reglas que se propongan. La política de upstream exige declarar el uso de IA y que el contribuidor revise y asuma la responsabilidad del código antes de enviarlo.

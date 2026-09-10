@@ -7,7 +7,7 @@ on:
         description: "Positive fork revision, for example 1"
         type: string
         required: true
-        default: "2"
+        default: "3"
       publish:
         description: "Publish the verified package as a GitHub prerelease"
         type: boolean

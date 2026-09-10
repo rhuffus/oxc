@@ -166,6 +166,23 @@ export default defineConfig({ rules: { 'no-debugger': 'error' } })
     nestRule.docs_url,
     "https://github.com/rhuffus/oxc/blob/codex/nestjs/forks/nestjs/rules/no-static-handlers.md",
   );
+  const wrapperRuleName = "nestjs/class-methods-use-this";
+  const wrapperRule = catalog.find(
+    (entry) => entry.scope === "nestjs" && entry.value === "class-methods-use-this",
+  );
+  assert.ok(wrapperRule, `The installed package must contain ${wrapperRuleName}`);
+  assert.equal(wrapperRule.category, "restriction");
+  assert.equal(wrapperRule.type_aware, false);
+  assert.equal(wrapperRule.fix, "none");
+  assert.equal(
+    wrapperRule.docs_url,
+    "https://github.com/rhuffus/oxc/blob/codex/nestjs/forks/nestjs/rules/class-methods-use-this.md",
+  );
+  for (const name of ["no-static-handlers", "class-methods-use-this"]) {
+    assert.ok(
+      readFileSync(join(packageRoot, "rules", `${name}.md`), "utf8").includes(`nestjs/${name}`),
+    );
+  }
   const nestCategories = Object.fromEntries(
     ["correctness", "suspicious", "pedantic", "perf", "style", "restriction", "nursery"].map(
       (category) => [category, "off"],
@@ -173,7 +190,7 @@ export default defineConfig({ rules: { 'no-debugger': 'error' } })
   );
   write(
     "nestjs.config.ts",
-    `import { defineConfig } from 'oxlint'\nexport default defineConfig(${JSON.stringify({ plugins: ["nestjs"], categories: nestCategories, rules: { [nestRuleName]: "error" } })})\n`,
+    `import { defineConfig } from 'oxlint'\nexport default defineConfig(${JSON.stringify({ plugins: ["nestjs"], categories: nestCategories, rules: { "class-methods-use-this": "off", [wrapperRuleName]: ["error", { enforceForClassFields: true, exceptMethods: [], ignoreOverrideMethods: false, ignoreClassesWithImplements: "public-fields" }], [nestRuleName]: "error" } })})\n`,
   );
   // Nest is deliberately absent: this native rule resolves import bindings from the AST.
   assert.ok(!existsSync(join(consumer, "node_modules/@nestjs/common")));
@@ -188,6 +205,10 @@ export default defineConfig({ rules: { 'no-debugger': 'error' } })
   write(
     "nestjs-helper.ts",
     "import { Get } from '@nestjs/common'; export class Controller { @Get() route() { return 'ok' } static helper() { return 'ok' } }\n",
+  );
+  write(
+    "nestjs-instance-helper.ts",
+    "import { Get as Route } from '@nestjs/common'; export class Controller { @Route() route() { return 'ok' } helper() { return 'ok' } }\n",
   );
   const staticReport = JSON.parse(
     lint("nestjs.config.ts", "nestjs-static.ts", 1, ["--format", "json"]),
@@ -209,8 +230,27 @@ export default defineConfig({ rules: { 'no-debugger': 'error' } })
   assert.equal(fixedReport.diagnostics.length, 1);
   assert.equal(fixedReport.diagnostics[0].code, "nestjs(no-static-handlers)");
   assert.equal(readFileSync(join(consumer, "nestjs-static.ts"), "utf8"), beforeFix);
+  const helperBeforeFix = readFileSync(join(consumer, "nestjs-instance-helper.ts"), "utf8");
+  const helperReport = JSON.parse(
+    lint("nestjs.config.ts", "nestjs-instance-helper.ts", 1, ["--fix", "--format", "json"]),
+  );
+  assert.equal(helperReport.number_of_files, 1);
+  assert.equal(helperReport.diagnostics.length, 1);
+  assert.equal(helperReport.diagnostics[0].code, "nestjs(class-methods-use-this)");
+  assert.equal(helperReport.diagnostics[0].severity, "error");
+  assert.equal(helperReport.diagnostics[0].url, wrapperRule.docs_url);
+  assert.equal(readFileSync(join(consumer, "nestjs-instance-helper.ts"), "utf8"), helperBeforeFix);
+  write(
+    "nestjs-exception.config.ts",
+    `import { defineConfig } from 'oxlint'\nexport default defineConfig(${JSON.stringify({ plugins: ["nestjs"], categories: nestCategories, rules: { "class-methods-use-this": "off", [wrapperRuleName]: ["error", { exceptMethods: ["helper"] }], [nestRuleName]: "error" } })})\n`,
+  );
+  const helperExcepted = JSON.parse(
+    lint("nestjs-exception.config.ts", "nestjs-instance-helper.ts", 0, ["--format", "json"]),
+  );
+  assert.equal(helperExcepted.number_of_files, 1);
+  assert.deepEqual(helperExcepted.diagnostics, []);
   log(
-    "PASS: packaged native Nest rule, TypeScript config, static/instance/helper HTTP fixtures and no autofix; no Nest dependency installed",
+    "PASS: both packaged native Nest rules and docs, TypeScript config with all four wrapper options, HTTP/helper fixtures, forwarded exception and no autofix; no Nest dependency installed",
   );
 
   write(
@@ -269,12 +309,20 @@ assert.equal(createRequire(import.meta.url)('oxlint/package.json').name, 'oxlint
     `import { defineConfig, type AllowWarnDeny, type OxlintConfig } from 'oxlint'
 import { RuleTester } from 'oxlint/plugins-dev'
 const config: OxlintConfig = defineConfig({ rules: { 'no-debugger': 'error' } })
-const nestConfig: OxlintConfig = defineConfig({ plugins: ['nestjs'], rules: { 'nestjs/no-static-handlers': 'error' } })
+const nestConfig: OxlintConfig = defineConfig({ plugins: ['nestjs'], rules: {
+  'class-methods-use-this': 'off',
+  'nestjs/class-methods-use-this': ['error', { enforceForClassFields: true, exceptMethods: ['helper', '#privateHelper'], ignoreOverrideMethods: false, ignoreClassesWithImplements: 'public-fields' }],
+  'nestjs/no-static-handlers': 'error',
+} })
 const tester = new RuleTester()
 // @ts-expect-error Invalid severities must be rejected by the published declarations.
 const invalidSeverity: AllowWarnDeny = 'not-a-severity'
 // @ts-expect-error The published native Nest rule accepts no options.
 defineConfig({ plugins: ['nestjs'], rules: { 'nestjs/no-static-handlers': ['error', {}] } })
+// @ts-expect-error The wrapper must retain the upstream option's boolean type.
+defineConfig({ rules: { 'nestjs/class-methods-use-this': ['error', { enforceForClassFields: 'true' }] } })
+// @ts-expect-error The wrapper must reject options absent from upstream.
+defineConfig({ rules: { 'nestjs/class-methods-use-this': ['error', { unknownOption: true }] } })
 void config
 void nestConfig
 void tester

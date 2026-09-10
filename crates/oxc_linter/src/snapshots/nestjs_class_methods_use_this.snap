@@ -1,0 +1,297 @@
+---
+source: crates/oxc_linter/src/tester.rs
+---
+
+  ⚠ nestjs(class-methods-use-this): Expected method `helper` to have this.
+   ╭─[class_methods_use_this.ts:1:78]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() handler() {} helper() {} }
+   ·                                                                              ──────
+   ╰────
+  help: Consider converting method `helper` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:27]
+ 1 │ class Controller { @Get() handler() {} }
+   ·                           ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:45]
+ 1 │ function Get() {} class Controller { @Get() handler() {} }
+   ·                                             ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:70]
+ 1 │ const nest = { Get: () => () => {} }; class Controller { @nest.Get() handler() {} }
+   ·                                                                      ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:68]
+ 1 │ import { Get } from 'another-framework'; class Controller { @Get() handler() {} }
+   ·                                                                    ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:75]
+ 1 │ import * as nest from 'another-framework'; class Controller { @nest.Get() handler() {} }
+   ·                                                                           ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:76]
+ 1 │ import { Get } from '@nestjs/common/decorators'; class Controller { @Get() handler() {} }
+   ·                                                                            ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:63]
+ 1 │ import { Get } from './decorators'; class Controller { @Get() handler() {} }
+   ·                                                               ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:78]
+ 1 │ import { UseGuards as Get } from '@nestjs/common'; class Controller { @Get() handler() {} }
+   ·                                                                              ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:61]
+ 1 │ import Get from '@nestjs/common'; class Controller { @Get() handler() {} }
+   ·                                                             ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:67]
+ 1 │ import nest from '@nestjs/common'; class Controller { @nest.Get() handler() {} }
+   ·                                                                   ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:78]
+ 1 │ import { Get as nest } from '@nestjs/common'; class Controller { @nest.Get() handler() {} }
+   ·                                                                              ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:70]
+ 1 │ import type { Get } from '@nestjs/common'; class Controller { @Get() handler() {} }
+   ·                                                                      ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:70]
+ 1 │ import { type Get } from '@nestjs/common'; class Controller { @Get() handler() {} }
+   ·                                                                      ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:81]
+ 1 │ import type { Get as Route } from '@nestjs/common'; class Controller { @Route() handler() {} }
+   ·                                                                                 ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:81]
+ 1 │ import { type Get as Route } from '@nestjs/common'; class Controller { @Route() handler() {} }
+   ·                                                                                 ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:77]
+ 1 │ import type * as nest from '@nestjs/common'; class Controller { @nest.Get() handler() {} }
+   ·                                                                             ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:88]
+ 1 │ import { Get } from '@nestjs/common'; function mixin(Get: any) { return class { @Get() handler() {} }; }
+   ·                                                                                        ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:96]
+ 1 │ import * as nest from '@nestjs/common'; function mixin(nest: any) { return class { @nest.Get() handler() {} }; }
+   ·                                                                                                ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:89]
+ 1 │ import { Get } from '@nestjs/common'; { const Get = () => {}; class Controller { @Get() handler() {} } }
+   ·                                                                                         ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:77]
+ 1 │ import { Get } from '@nestjs/common'; const Controller = class Get { @Get() handler() {} };
+   ·                                                                             ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:86]
+ 1 │ import { Get } from '@nestjs/common'; const Route = Get; class Controller { @Route() handler() {} }
+   ·                                                                                      ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:93]
+ 1 │ import * as nest from '@nestjs/common'; const alias = nest; class Controller { @alias.Get() handler() {} }
+   ·                                                                                             ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:99]
+ 1 │ import { Get, applyDecorators } from '@nestjs/common'; class Controller { @applyDecorators(Get()) handler() {} }
+   ·                                                                                                   ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:70]
+ 1 │ const { Get } = require('@nestjs/common'); class Controller { @Get() handler() {} }
+   ·                                                                      ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:73]
+ 1 │ import nest = require('@nestjs/common'); class Controller { @nest.Get() handler() {} }
+   ·                                                                         ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:94]
+ 1 │ import * as nest from '@nestjs/common'; const key = 'Get'; class Controller { @(nest[key]()) handler() {} }
+   ·                                                                                              ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:82]
+ 1 │ import * as nest from '@nestjs/common'; class Controller { @(nest[`G${'et'}`]()) handler() {} }
+   ·                                                                                  ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:77]
+ 1 │ import * as nest from '@nestjs/common'; class Controller { @nest.http.Get() handler() {} }
+   ·                                                                             ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:74]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get.bind(null) handler() {} }
+   ·                                                                          ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:63]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get handler() {} }
+   ·                                                               ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:133]
+ 1 │ import { HttpCode, Header, UseGuards } from '@nestjs/common'; class Controller { @HttpCode(200) @Header('x', 'y') @UseGuards(Guard) handler() {} }
+   ·                                                                                                                                     ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:69]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() get handler() { return 'ready'; } }
+   ·                                                                     ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:69]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() set handler(value: string) {} }
+   ·                                                                     ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:65]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() handler = () => 'ready'; }
+   ·                                                                 ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:65]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() handler = function() { return 'ready'; }; }
+   ·                                                                 ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:74]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() accessor handler = () => 'ready'; }
+   ·                                                                          ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:74]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() accessor handler = function() { return 'ready'; }; }
+   ·                                                                          ───────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `handler` to have this.
+   ╭─[class_methods_use_this.ts:1:65]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() #handler() {} }
+   ·                                                                 ────────
+   ╰────
+  help: Consider converting method `handler` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method to have this.
+   ╭─[class_methods_use_this.ts:1:66]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() [Symbol.iterator]() {} }
+   ·                                                                  ───────────────
+   ╰────
+  help: Consider converting method to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method `constructor` to have this.
+   ╭─[class_methods_use_this.ts:1:66]
+ 1 │ import { Get } from '@nestjs/common'; class Controller { @Get() ['constructor']() {} }
+   ·                                                                  ─────────────
+   ╰────
+  help: Consider converting method `constructor` to a static method.
+
+  ⚠ nestjs(class-methods-use-this): Expected method to have this.
+   ╭─[class_methods_use_this.ts:1:97]
+ 1 │ import { Get } from '@nestjs/common'; const dynamicName = 'handler'; class Controller { @Get() [dynamicName]() {} }
+   ·                                                                                                 ───────────
+   ╰────
+  help: Consider converting method to a static method.

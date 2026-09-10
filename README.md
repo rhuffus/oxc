@@ -1,4 +1,4 @@
-> **Fork de rhuffus para validaciones NestJS.** Desde `1.82.0-nestjs.2` incluye la regla nativa [`nestjs/no-static-handlers`](forks/nestjs/rules/no-static-handlers.md), que detecta handlers HTTP estáticos. Consulta la [guía del fork](forks/nestjs/README.md) para activarla, compilar e instalar los paquetes de macOS Apple Silicon.
+> **Fork de rhuffus para validaciones NestJS.** Incluye [`nestjs/no-static-handlers`](forks/nestjs/rules/no-static-handlers.md) desde `1.82.0-nestjs.2` y [`nestjs/class-methods-use-this`](forks/nestjs/rules/class-methods-use-this.md) desde `1.82.0-nestjs.3`: detectan handlers HTTP estáticos y permiten que sus métodos de instancia no usen `this`. Consulta la [guía del fork](forks/nestjs/README.md) para activarlas, compilar e instalar los paquetes de macOS Apple Silicon.
 
 <p align="center">
   <br>

@@ -56,6 +56,17 @@ const Ajv = appRequire("ajv");
 const ruleName = "nestjs/no-static-handlers";
 const documentation =
   "https://github.com/rhuffus/oxc/blob/codex/nestjs/forks/nestjs/rules/no-static-handlers.md";
+const wrapperRuleName = "nestjs/class-methods-use-this";
+const wrapperDocumentation =
+  "https://github.com/rhuffus/oxc/blob/codex/nestjs/forks/nestjs/rules/class-methods-use-this.md";
+const wrapperCode = "nestjs(class-methods-use-this)";
+const baseCode = "eslint(class-methods-use-this)";
+const wrapperDefaults = {
+  enforceForClassFields: true,
+  exceptMethods: [],
+  ignoreOverrideMethods: false,
+  ignoreClassesWithImplements: undefined,
+};
 const categories = Object.fromEntries(
   ["correctness", "suspicious", "pedantic", "perf", "style", "restriction", "nursery"].map(
     (category) => [category, "off"],
@@ -103,7 +114,15 @@ const run = (command, args, expectedStatus = 0) => {
   );
   return result.stdout;
 };
-const lint = (file, expectedCount, config = "oxlint.config.ts", extra = []) => {
+const lint = (
+  file,
+  expectedCount,
+  config = "oxlint.config.ts",
+  extra = [],
+  expectedCodes = Array(expectedCount).fill(
+    config === "base.config.ts" ? baseCode : "nestjs(no-static-handlers)",
+  ),
+) => {
   const output = run(
     process.execPath,
     [cli, "--config", config, "--format", "json", ...extra, file],
@@ -112,14 +131,19 @@ const lint = (file, expectedCount, config = "oxlint.config.ts", extra = []) => {
   const report = JSON.parse(output);
   assert.equal(report.diagnostics.length, expectedCount, output);
   assert.equal(report.number_of_files, 1, "The fixture must actually be linted");
+  assert.deepEqual(
+    report.diagnostics.map((diagnostic) => diagnostic.code).sort(),
+    expectedCodes.toSorted((left, right) => left.localeCompare(right)),
+    output,
+  );
   for (const diagnostic of report.diagnostics) {
     assert.equal(diagnostic.severity, "error", output);
-    assert.equal(
-      diagnostic.code,
-      config === "base.config.ts" ? "eslint(class-methods-use-this)" : "nestjs(no-static-handlers)",
-      output,
-    );
-    if (config !== "base.config.ts") assert.equal(diagnostic.url, documentation);
+    if (diagnostic.code === "nestjs(no-static-handlers)") {
+      assert.equal(diagnostic.url, documentation);
+    }
+    if (diagnostic.code === wrapperCode) {
+      assert.equal(diagnostic.url, wrapperDocumentation);
+    }
   }
   return report;
 };
@@ -221,6 +245,17 @@ try {
     documentation,
     "Native Nest rules must link to the fork's documentation",
   );
+  const wrapperEntry = catalog.find(
+    (item) => item.scope === "nestjs" && item.value === "class-methods-use-this",
+  );
+  assert.ok(
+    wrapperEntry,
+    `The supplied CLI does not contain ${wrapperRuleName}; build the fork first`,
+  );
+  assert.equal(wrapperEntry.category, "restriction");
+  assert.equal(wrapperEntry.type_aware, false);
+  assert.equal(wrapperEntry.fix, "none");
+  assert.equal(wrapperEntry.docs_url, wrapperDocumentation);
   const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
   const ajv = new Ajv({ allErrors: true, unknownFormats: "ignore", logger: false });
   const validate = ajv.compile(schema);
@@ -231,6 +266,79 @@ try {
     "The native schema must reject options for this zero-option rule",
   );
   log("native catalog metadata and schema: correctness, no types, no fixes, zero options");
+
+  const ruleSchemas = schema.definitions.DummyRuleMap.properties;
+  assert.deepEqual(
+    ruleSchemas[wrapperRuleName],
+    ruleSchemas["class-methods-use-this"],
+    "The wrapper must expose exactly the upstream rule's configuration schema",
+  );
+  assert.deepEqual(Object.keys(schema.definitions.ClassMethodsUseThisConfig.properties).sort(), [
+    "enforceForClassFields",
+    "exceptMethods",
+    "ignoreClassesWithImplements",
+    "ignoreOverrideMethods",
+  ]);
+  const wrapperConfiguration = {
+    ...configuration,
+    rules: {
+      "class-methods-use-this": "off",
+      [wrapperRuleName]: ["error", wrapperDefaults],
+      [ruleName]: "error",
+    },
+  };
+  assert.ok(
+    validate(JSON.parse(JSON.stringify(wrapperConfiguration))),
+    JSON.stringify(validate.errors),
+  );
+  for (const options of [
+    { ...wrapperDefaults, ignoreClassesWithImplements: "all" },
+    { ...wrapperDefaults, ignoreClassesWithImplements: "public-fields" },
+  ]) {
+    assert.ok(
+      validate(
+        JSON.parse(
+          JSON.stringify({
+            ...wrapperConfiguration,
+            rules: { [wrapperRuleName]: ["error", options] },
+          }),
+        ),
+      ),
+      JSON.stringify(validate.errors),
+    );
+  }
+  for (const options of [
+    { enforceForClassFields: "true" },
+    { exceptMethods: [42] },
+    { ignoreOverrideMethods: "false" },
+    { ignoreClassesWithImplements: "unknown" },
+    { unknownOption: true },
+  ]) {
+    assert.equal(
+      validate({ ...configuration, rules: { [wrapperRuleName]: ["error", options] } }),
+      false,
+      JSON.stringify(options),
+    );
+  }
+  write(
+    "wrapper.config.ts",
+    `import { defineConfig } from 'oxlint'
+export default defineConfig({
+  plugins: ['nestjs'],
+  categories: ${JSON.stringify(categories)},
+  rules: {
+    'class-methods-use-this': 'off',
+    '${wrapperRuleName}': ['error', {
+      enforceForClassFields: true,
+      exceptMethods: [],
+      ignoreOverrideMethods: false,
+      ignoreClassesWithImplements: undefined,
+    }],
+    '${ruleName}': 'error',
+  },
+})
+`,
+  );
 
   write(
     "oxlint.config.ts",
@@ -243,6 +351,17 @@ const config: OxlintConfig = defineConfig({ plugins: ['nestjs'], rules: { '${rul
 void config
 // @ts-expect-error The native rule has no options.
 defineConfig({ plugins: ['nestjs'], rules: { '${ruleName}': ['error', {}] } })
+const wrapper: OxlintConfig = defineConfig({ plugins: ['nestjs'], rules: {
+  'class-methods-use-this': 'off',
+  '${wrapperRuleName}': ['error', { enforceForClassFields: false, exceptMethods: ['helper', '#privateHelper'], ignoreOverrideMethods: true, ignoreClassesWithImplements: 'public-fields' }],
+  '${ruleName}': 'error',
+} })
+defineConfig({ rules: { '${wrapperRuleName}': ['error', { ignoreClassesWithImplements: 'all' }] } })
+// @ts-expect-error The wrapper retains strict upstream option value types.
+defineConfig({ rules: { '${wrapperRuleName}': ['error', { enforceForClassFields: 'true' }] } })
+// @ts-expect-error The wrapper does not invent additional options.
+defineConfig({ rules: { '${wrapperRuleName}': ['error', { unknownOption: true }] } })
+void wrapper
 `,
   );
   write(
@@ -257,7 +376,7 @@ defineConfig({ plugins: ['nestjs'], rules: { '${ruleName}': ['error', {}] } })
         skipLibCheck: false,
         types: [],
       },
-      files: ["types.ts", "oxlint.config.ts"],
+      files: ["types.ts", "oxlint.config.ts", "wrapper.config.ts"],
     }),
   );
   run(process.execPath, [typescriptCli, "--project", "tsconfig.json", "--pretty", "false"]);
@@ -438,6 +557,319 @@ defineConfig({ plugins: ['nestjs'], rules: { '${ruleName}': ['error', {}] } })
   lint("instance.ts", 1, "base.config.ts");
   log(
     "known base-rule conflict reproduced separately: class-methods-use-this rejects the valid Nest instance handler",
+  );
+
+  const wrapperFixtures = [
+    [
+      "instance",
+      "import { Get } from '@nestjs/common'; class C { @Get() handler() { return 'ok' } }",
+      0,
+    ],
+    ["auxiliary", "class C { helper() { return 'ok' } }", 1],
+    [
+      "literal-method-name",
+      "import { Get } from '@nestjs/common'; class C { @Get() ['handler']() { return 'ok' } }",
+      0,
+    ],
+    [
+      "template-method-name",
+      'import { Get } from "@nestjs/common"; class C { @Get() [`handler`]() { return "ok" } }',
+      0,
+    ],
+    [
+      "symbol-method-name",
+      "import { Get } from '@nestjs/common'; class C { @Get() [Symbol.iterator]() { return 'ok' } }",
+      1,
+    ],
+    [
+      "constructor-method-name",
+      "import { Get } from '@nestjs/common'; class C { @Get() ['constructor']() { return 'ok' } }",
+      1,
+    ],
+    [
+      "dynamic-method-name",
+      "import { Get } from '@nestjs/common'; const dynamicName = 'handler'; class C { @Get() [dynamicName]() { return 'ok' } }",
+      1,
+    ],
+    [
+      "private-name",
+      "import { Get } from '@nestjs/common'; class C { @Get() #handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "typescript-private",
+      "import { Get } from '@nestjs/common'; class C { @Get() private handler() { return 'ok' } }",
+      0,
+    ],
+    [
+      "typescript-protected",
+      "import { Get } from '@nestjs/common'; class C { @Get() protected handler() { return 'ok' } }",
+      0,
+    ],
+    [
+      "controller-not-exempt",
+      "import { Controller, Get } from '@nestjs/common'; @Controller() class C { @Get() handler() { return 'ok' } helper() { return 'ok' } }",
+      1,
+    ],
+    [
+      "aliased",
+      "import { Get as Route } from '@nestjs/common'; class C { @Route() handler() { return 'ok' } }",
+      0,
+    ],
+    [
+      "namespace",
+      "import * as Nest from '@nestjs/common'; class C { @Nest.Get() handler() { return 'ok' } }",
+      0,
+    ],
+    [
+      "namespace-string",
+      "import * as Nest from '@nestjs/common'; class C { @(Nest['Get']()) handler() { return 'ok' } }",
+      0,
+    ],
+    [
+      "namespace-template",
+      'import * as Nest from "@nestjs/common"; class C { @(Nest[`Get`]()) handler() { return "ok" } }',
+      0,
+    ],
+    [
+      "shadowed-name",
+      "import { Get } from '@nestjs/common'; function nested(Get: () => MethodDecorator) { return class C { @Get() handler() { return 'ok' } } }",
+      1,
+    ],
+    [
+      "shadowed-namespace",
+      "import * as Nest from '@nestjs/common'; function nested(Nest: { Get: () => MethodDecorator }) { return class C { @Nest.Get() handler() { return 'ok' } } }",
+      1,
+    ],
+    [
+      "handler-parameter",
+      "import { Get } from '@nestjs/common'; class C { @Get() handler(Get: string) { return Get } }",
+      0,
+    ],
+    [
+      "foreign-import",
+      "import { Get } from 'other-framework'; class C { @Get() handler() { return 'ok' } }",
+      1,
+    ],
+    ["local-name", "const Get = () => () => {}; class C { @Get() handler() { return 'ok' } }", 1],
+    [
+      "type-import",
+      "import type { Get } from '@nestjs/common'; class C { @Get() handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "type-specifier",
+      "import { type Get } from '@nestjs/common'; class C { @Get() handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "namespace-type-import",
+      "import type * as Nest from '@nestjs/common'; class C { @Nest.Get() handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "non-http",
+      "import { Header, HttpCode } from '@nestjs/common'; class C { @Header('x-test', 'yes') @HttpCode(200) handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "base-class",
+      "import { Get } from '@nestjs/common'; abstract class Base { @Get() handler() { return 'ok' } } class C extends Base {}",
+      0,
+    ],
+    [
+      "mixin",
+      "import { Get } from '@nestjs/common'; function mixin(Base: new () => object) { return class extends Base { @Get() handler() { return 'ok' } } }",
+      0,
+    ],
+    [
+      "class-expression",
+      "import { Get } from '@nestjs/common'; export const C = class { @Get() handler() { return 'ok' } }",
+      0,
+    ],
+    [
+      "getter",
+      "import { Get } from '@nestjs/common'; class C { @Get() get handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "setter",
+      "import { Get } from '@nestjs/common'; class C { @Get() set handler(value: string) { void value } }",
+      1,
+    ],
+    ["field", "import { Get } from '@nestjs/common'; class C { @Get() handler = () => 'ok' }", 1],
+    [
+      "auto-accessor",
+      "import { Get } from '@nestjs/common'; class C { @Get() accessor handler = () => 'ok' }",
+      1,
+    ],
+    [
+      "assigned-alias",
+      "import { Get } from '@nestjs/common'; const Route = Get; class C { @Route() handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "dynamic-namespace",
+      "import * as Nest from '@nestjs/common'; const key = 'Get'; class C { @(Nest[key]()) handler() { return 'ok' } }",
+      1,
+    ],
+    [
+      "default-import",
+      "import Nest from '@nestjs/common'; class C { @Nest.Get() handler() { return 'ok' } }",
+      1,
+    ],
+    ["stateful-helper", "class C { value = 'ok'; helper() { return this.value } }", 0],
+    ["static-helper", "class C { static helper() { return 'ok' } }", 0],
+  ];
+  for (const decorator of decorators) {
+    wrapperFixtures.push([
+      `decorator-${decorator}`,
+      `import { ${decorator} as Route } from '@nestjs/common'; class C { @Route() handler() { return 'ok' } }`,
+      0,
+    ]);
+  }
+  for (const [name, source, expectedCount] of wrapperFixtures) {
+    const file = `wrapper-${name}.ts`;
+    write(file, `${source}\n`);
+    lint(file, expectedCount, "wrapper.config.ts", [], Array(expectedCount).fill(wrapperCode));
+  }
+  lint("runtime-http.ts", 1, "wrapper.config.ts");
+  write(
+    "wrapper-mixed.ts",
+    "import { Get } from '@nestjs/common'; class C { @Get() static handler() { return 'ok' } helper() { return 'ok' } }\n",
+  );
+  lint("wrapper-mixed.ts", 2, "wrapper.config.ts", [], ["nestjs(no-static-handlers)", wrapperCode]);
+  log(
+    `${wrapperFixtures.length + 2} combined wrapper fixtures: only instance HTTP methods are exempt; helpers, shadowed bindings, accessors and fields retain their checks`,
+  );
+
+  const exceptionSource = "class C { helper() { return 1 } #helper() { return 2 } }";
+  const fieldSource = "class C { arrow = () => 1; callback = function () { return 2 } }";
+  const overrideSource =
+    "class Base { helper() { return this } } class C extends Base { override helper() { return 1 } }";
+  const overrideFieldSource =
+    "class Base { handler = () => this } class C extends Base { override handler = () => 1 }";
+  const implementsSource =
+    "interface Port { work(): number } class C implements Port { work() { return 1 } protected helper() { return 2 } private internal() { return 3 } #secret() { return 4 } field = () => 5 }";
+  /** @type {Array<[string, string, Record<string, unknown> | undefined, number]>} */
+  const parityCases = [
+    ["omitted-options", "class C { helper() { return 1 } }", undefined, 1],
+    ["explicit-defaults", "class C { helper() { return 1 } }", wrapperDefaults, 1],
+    ["empty-options", "class C { helper() { return 1 } }", {}, 1],
+    ["fields-default", fieldSource, undefined, 2],
+    ["fields-enabled", fieldSource, { enforceForClassFields: true }, 2],
+    ["fields-disabled", fieldSource, { enforceForClassFields: false }, 0],
+    ["accessor-field-default", "class C { accessor handler = () => 1 }", undefined, 1],
+    [
+      "accessor-field-disabled",
+      "class C { accessor handler = () => 1 }",
+      { enforceForClassFields: false },
+      0,
+    ],
+    [
+      "decorated-field-enabled",
+      "import { Get } from '@nestjs/common'; class C { @Get() handler = () => 1 }",
+      { enforceForClassFields: true },
+      1,
+    ],
+    [
+      "decorated-field-disabled",
+      "import { Get } from '@nestjs/common'; class C { @Get() handler = () => 1 }",
+      { enforceForClassFields: false },
+      0,
+    ],
+    ["exceptions-default", exceptionSource, undefined, 2],
+    ["except-public", exceptionSource, { exceptMethods: ["helper"] }, 1],
+    ["except-private", exceptionSource, { exceptMethods: ["#helper"] }, 1],
+    ["except-both", exceptionSource, { exceptMethods: ["helper", "#helper"] }, 0],
+    ["override-default", overrideSource, undefined, 1],
+    ["override-enabled", overrideSource, { ignoreOverrideMethods: true }, 0],
+    ["override-disabled", overrideSource, { ignoreOverrideMethods: false }, 1],
+    ["override-field-default", overrideFieldSource, undefined, 1],
+    ["override-field-ignored", overrideFieldSource, { ignoreOverrideMethods: true }, 0],
+    ["implements-default", implementsSource, undefined, 5],
+    ["implements-all", implementsSource, { ignoreClassesWithImplements: "all" }, 0],
+    [
+      "implements-public-fields",
+      implementsSource,
+      { ignoreClassesWithImplements: "public-fields" },
+      3,
+    ],
+    [
+      "without-implements",
+      "class C { helper() { return 1 } }",
+      { ignoreClassesWithImplements: "all" },
+      1,
+    ],
+    [
+      "all-options",
+      implementsSource,
+      {
+        enforceForClassFields: false,
+        exceptMethods: ["helper", "#secret"],
+        ignoreOverrideMethods: true,
+        ignoreClassesWithImplements: "public-fields",
+      },
+      1,
+    ],
+  ];
+  for (const [name, source, options, expectedCount] of parityCases) {
+    const file = `parity-${name}.ts`;
+    write(file, `${source}\n`);
+    const severity = options === undefined ? "error" : ["error", options];
+    for (const [config, selectedRule] of [
+      ["parity-base.config.ts", "class-methods-use-this"],
+      ["parity-wrapper.config.ts", wrapperRuleName],
+    ]) {
+      write(
+        config,
+        `import { defineConfig } from 'oxlint'\nexport default defineConfig(${JSON.stringify({ plugins: ["nestjs"], categories, rules: { "class-methods-use-this": "off", [wrapperRuleName]: "off", [ruleName]: "off", [selectedRule]: severity } })})\n`,
+      );
+    }
+    const base = lint(
+      file,
+      expectedCount,
+      "parity-base.config.ts",
+      [],
+      Array(expectedCount).fill(baseCode),
+    );
+    const wrapper = lint(
+      file,
+      expectedCount,
+      "parity-wrapper.config.ts",
+      [],
+      Array(expectedCount).fill(wrapperCode),
+    );
+    const details = (report) =>
+      report.diagnostics.map(({ code: _code, url: _url, ...diagnostic }) => diagnostic);
+    assert.deepEqual(
+      details(wrapper),
+      details(base),
+      `Native wrapper changed upstream behavior for ${name}`,
+    );
+  }
+  log(
+    `${parityCases.length} option parity cases match upstream counts, messages, help and source spans across all four options and defaults`,
+  );
+
+  for (const extra of [["--fix"], ["--fix-suggestions"], ["--fix-dangerously"]]) {
+    const before = readFileSync(join(consumer, "wrapper-auxiliary.ts"), "utf8");
+    lint("wrapper-auxiliary.ts", 1, "wrapper.config.ts", extra, [wrapperCode]);
+    assert.equal(readFileSync(join(consumer, "wrapper-auxiliary.ts"), "utf8"), before);
+  }
+  const wrapperSarif = JSON.parse(
+    run(
+      process.execPath,
+      [cli, "--config", "wrapper.config.ts", "--format", "sarif", "wrapper-auxiliary.ts"],
+      1,
+    ),
+  );
+  const wrapperSarifRule = wrapperSarif.runs[0].tool.driver.rules.find((item) =>
+    item.id.includes("class-methods-use-this"),
+  );
+  assert.equal(wrapperSarifRule?.helpUri, wrapperDocumentation);
+  log(
+    "wrapper metadata, JSON/SARIF documentation and all fix modes preserve the upstream diagnostic without autofix",
   );
   process.stdout.write("All native Nest HTTP handler integration checks passed.\n");
 } finally {

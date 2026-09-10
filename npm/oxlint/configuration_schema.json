@@ -4379,6 +4379,26 @@
             }
           ]
         },
+        "nestjs/class-methods-use-this": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RuleNoConfig"
+            },
+            {
+              "type": "array",
+              "items": [
+                {
+                  "$ref": "#/definitions/AllowWarnDeny"
+                },
+                {
+                  "$ref": "#/definitions/ClassMethodsUseThisConfig"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          ]
+        },
         "nestjs/no-static-handlers": {
           "$ref": "#/definitions/RuleNoConfig"
         },

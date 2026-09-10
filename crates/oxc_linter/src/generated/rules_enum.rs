@@ -349,6 +349,7 @@ pub use crate::rules::jsx_a11y::role_has_required_aria_props::RoleHasRequiredAri
 pub use crate::rules::jsx_a11y::role_supports_aria_props::RoleSupportsAriaProps as JsxA11YRoleSupportsAriaProps;
 pub use crate::rules::jsx_a11y::scope::Scope as JsxA11YScope;
 pub use crate::rules::jsx_a11y::tabindex_no_positive::TabindexNoPositive as JsxA11YTabindexNoPositive;
+pub use crate::rules::nestjs::class_methods_use_this::ClassMethodsUseThis as NestjsClassMethodsUseThis;
 pub use crate::rules::nestjs::no_static_handlers::NoStaticHandlers as NestjsNoStaticHandlers;
 pub use crate::rules::nextjs::google_font_display::GoogleFontDisplay as NextjsGoogleFontDisplay;
 pub use crate::rules::nextjs::google_font_preconnect::GoogleFontPreconnect as NextjsGoogleFontPreconnect;
@@ -1769,6 +1770,7 @@ pub enum RuleEnum {
     VueValidDefineOptions(VueValidDefineOptions),
     VueValidDefineProps(VueValidDefineProps),
     VueValidNextTick(VueValidNextTick),
+    NestjsClassMethodsUseThis(NestjsClassMethodsUseThis),
     NestjsNoStaticHandlers(NestjsNoStaticHandlers),
 }
 const IMPORT_CONSISTENT_TYPE_SPECIFIER_STYLE_ID: usize = 0usize;
@@ -2750,8 +2752,9 @@ const VUE_VALID_DEFINE_EMITS_ID: usize = VUE_RETURN_IN_EMITS_VALIDATOR_ID + 1usi
 const VUE_VALID_DEFINE_OPTIONS_ID: usize = VUE_VALID_DEFINE_EMITS_ID + 1usize;
 const VUE_VALID_DEFINE_PROPS_ID: usize = VUE_VALID_DEFINE_OPTIONS_ID + 1usize;
 const VUE_VALID_NEXT_TICK_ID: usize = VUE_VALID_DEFINE_PROPS_ID + 1usize;
-const NESTJS_NO_STATIC_HANDLERS_ID: usize = VUE_VALID_NEXT_TICK_ID + 1usize;
-static RULE_NAMES: [&str; 871usize] = [
+const NESTJS_CLASS_METHODS_USE_THIS_ID: usize = VUE_VALID_NEXT_TICK_ID + 1usize;
+const NESTJS_NO_STATIC_HANDLERS_ID: usize = NESTJS_CLASS_METHODS_USE_THIS_ID + 1usize;
+static RULE_NAMES: [&str; 872usize] = [
     ImportConsistentTypeSpecifierStyle::NAME,
     ImportDefault::NAME,
     ImportExport::NAME,
@@ -3622,6 +3625,7 @@ static RULE_NAMES: [&str; 871usize] = [
     VueValidDefineOptions::NAME,
     VueValidDefineProps::NAME,
     VueValidNextTick::NAME,
+    NestjsClassMethodsUseThis::NAME,
     NestjsNoStaticHandlers::NAME,
 ];
 impl RuleEnum {
@@ -4627,6 +4631,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VUE_VALID_DEFINE_OPTIONS_ID,
             Self::VueValidDefineProps(_) => VUE_VALID_DEFINE_PROPS_ID,
             Self::VueValidNextTick(_) => VUE_VALID_NEXT_TICK_ID,
+            Self::NestjsClassMethodsUseThis(_) => NESTJS_CLASS_METHODS_USE_THIS_ID,
             Self::NestjsNoStaticHandlers(_) => NESTJS_NO_STATIC_HANDLERS_ID,
         }
     }
@@ -5679,6 +5684,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::CATEGORY,
             Self::VueValidDefineProps(_) => VueValidDefineProps::CATEGORY,
             Self::VueValidNextTick(_) => VueValidNextTick::CATEGORY,
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::CATEGORY,
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::CATEGORY,
         }
     }
@@ -6669,6 +6675,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::FIX,
             Self::VueValidDefineProps(_) => VueValidDefineProps::FIX,
             Self::VueValidNextTick(_) => VueValidNextTick::FIX,
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::FIX,
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::FIX,
         }
     }
@@ -7933,6 +7940,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::documentation(),
             Self::VueValidDefineProps(_) => VueValidDefineProps::documentation(),
             Self::VueValidNextTick(_) => VueValidNextTick::documentation(),
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::documentation(),
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::documentation(),
         }
     }
@@ -10433,6 +10441,10 @@ impl RuleEnum {
                 .or_else(|| VueValidDefineProps::schema(generator)),
             Self::VueValidNextTick(_) => VueValidNextTick::config_schema(generator)
                 .or_else(|| VueValidNextTick::schema(generator)),
+            Self::NestjsClassMethodsUseThis(_) => {
+                NestjsClassMethodsUseThis::config_schema(generator)
+                    .or_else(|| NestjsClassMethodsUseThis::schema(generator))
+            }
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::config_schema(generator)
                 .or_else(|| NestjsNoStaticHandlers::schema(generator)),
         }
@@ -11309,6 +11321,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => "vue",
             Self::VueValidDefineProps(_) => "vue",
             Self::VueValidNextTick(_) => "vue",
+            Self::NestjsClassMethodsUseThis(_) => "nestjs",
             Self::NestjsNoStaticHandlers(_) => "nestjs",
         }
     }
@@ -12404,6 +12417,9 @@ impl RuleEnum {
             Self::VueReturnInComputedProperty(_) => Ok(Self::VueReturnInComputedProperty(
                 VueReturnInComputedProperty::from_configuration(value)?,
             )),
+            Self::NestjsClassMethodsUseThis(_) => Ok(Self::NestjsClassMethodsUseThis(
+                NestjsClassMethodsUseThis::from_configuration(value)?,
+            )),
             _ => Ok(RULES[self.id()].clone()),
         }
     }
@@ -13318,6 +13334,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(rule) => rule.run(node, ctx),
             Self::VueValidDefineProps(rule) => rule.run(node, ctx),
             Self::VueValidNextTick(rule) => rule.run(node, ctx),
+            Self::NestjsClassMethodsUseThis(rule) => rule.run(node, ctx),
             Self::NestjsNoStaticHandlers(rule) => rule.run(node, ctx),
         }
     }
@@ -14206,6 +14223,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(rule) => rule.run_once(ctx),
             Self::VueValidDefineProps(rule) => rule.run_once(ctx),
             Self::VueValidNextTick(rule) => rule.run_once(ctx),
+            Self::NestjsClassMethodsUseThis(rule) => rule.run_once(ctx),
             Self::NestjsNoStaticHandlers(rule) => rule.run_once(ctx),
         }
     }
@@ -15211,6 +15229,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::VueValidDefineProps(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::VueValidNextTick(rule) => rule.run_on_jest_node(jest_node, ctx),
+            Self::NestjsClassMethodsUseThis(rule) => rule.run_on_jest_node(jest_node, ctx),
             Self::NestjsNoStaticHandlers(rule) => rule.run_on_jest_node(jest_node, ctx),
         }
     }
@@ -16100,6 +16119,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(rule) => rule.should_run(ctx),
             Self::VueValidDefineProps(rule) => rule.should_run(ctx),
             Self::VueValidNextTick(rule) => rule.should_run(ctx),
+            Self::NestjsClassMethodsUseThis(rule) => rule.should_run(ctx),
             Self::NestjsNoStaticHandlers(rule) => rule.should_run(ctx),
         }
     }
@@ -17363,6 +17383,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::IS_TSGOLINT_RULE,
             Self::VueValidDefineProps(_) => VueValidDefineProps::IS_TSGOLINT_RULE,
             Self::VueValidNextTick(_) => VueValidNextTick::IS_TSGOLINT_RULE,
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::IS_TSGOLINT_RULE,
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::IS_TSGOLINT_RULE,
         }
     }
@@ -18414,6 +18435,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::VERSION,
             Self::VueValidDefineProps(_) => VueValidDefineProps::VERSION,
             Self::VueValidNextTick(_) => VueValidNextTick::VERSION,
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::VERSION,
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::VERSION,
         }
     }
@@ -19504,6 +19526,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::HAS_CONFIG,
             Self::VueValidDefineProps(_) => VueValidDefineProps::HAS_CONFIG,
             Self::VueValidNextTick(_) => VueValidNextTick::HAS_CONFIG,
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::HAS_CONFIG,
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::HAS_CONFIG,
         }
     }
@@ -20495,6 +20518,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(_) => VueValidDefineOptions::INFO,
             Self::VueValidDefineProps(_) => VueValidDefineProps::INFO,
             Self::VueValidNextTick(_) => VueValidNextTick::INFO,
+            Self::NestjsClassMethodsUseThis(_) => NestjsClassMethodsUseThis::INFO,
             Self::NestjsNoStaticHandlers(_) => NestjsNoStaticHandlers::INFO,
         }
     }
@@ -21375,6 +21399,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(rule) => rule.types_info(),
             Self::VueValidDefineProps(rule) => rule.types_info(),
             Self::VueValidNextTick(rule) => rule.types_info(),
+            Self::NestjsClassMethodsUseThis(rule) => rule.types_info(),
             Self::NestjsNoStaticHandlers(rule) => rule.types_info(),
         }
     }
@@ -22250,6 +22275,7 @@ impl RuleEnum {
             Self::VueValidDefineOptions(rule) => rule.run_info(),
             Self::VueValidDefineProps(rule) => rule.run_info(),
             Self::VueValidNextTick(rule) => rule.run_info(),
+            Self::NestjsClassMethodsUseThis(rule) => rule.run_info(),
             Self::NestjsNoStaticHandlers(rule) => rule.run_info(),
         }
     }
@@ -23261,6 +23287,7 @@ pub static RULES: std::sync::LazyLock<Vec<RuleEnum>> = std::sync::LazyLock::new(
         RuleEnum::VueValidDefineOptions(VueValidDefineOptions::default()),
         RuleEnum::VueValidDefineProps(VueValidDefineProps::default()),
         RuleEnum::VueValidNextTick(VueValidNextTick::default()),
+        RuleEnum::NestjsClassMethodsUseThis(NestjsClassMethodsUseThis::default()),
         RuleEnum::NestjsNoStaticHandlers(NestjsNoStaticHandlers::default()),
     ]
 });

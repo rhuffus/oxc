@@ -985,6 +985,7 @@ pub(crate) mod vue {
 
 /// Native NestJS validations maintained by the rhuffus fork.
 pub(crate) mod nestjs {
+    pub mod class_methods_use_this;
     pub mod no_static_handlers;
 }
 

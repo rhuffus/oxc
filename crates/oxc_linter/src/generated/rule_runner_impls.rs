@@ -5551,6 +5551,15 @@ impl RuleRunner for crate::rules::vue::valid_next_tick::ValidNextTick {
     const RUN_FUNCTIONS: RuleRunFunctionsImplemented = RuleRunFunctionsImplemented::Run;
 }
 
+impl RuleRunner for crate::rules::nestjs::class_methods_use_this::ClassMethodsUseThis {
+    const NODE_TYPES: Option<&AstTypesBitset> = Some(&AstTypesBitset::from_types(&[
+        AstType::AccessorProperty,
+        AstType::MethodDefinition,
+        AstType::PropertyDefinition,
+    ]));
+    const RUN_FUNCTIONS: RuleRunFunctionsImplemented = RuleRunFunctionsImplemented::Run;
+}
+
 impl RuleRunner for crate::rules::nestjs::no_static_handlers::NoStaticHandlers {
     const NODE_TYPES: Option<&AstTypesBitset> =
         Some(&AstTypesBitset::from_types(&[AstType::MethodDefinition]));
