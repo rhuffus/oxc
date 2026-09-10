@@ -1,7 +1,7 @@
 parser_misc Summary:
-AST Parsed     : 104/104 (100.00%)
-Positive Passed: 104/104 (100.00%)
-Negative Passed: 210/210 (100.00%)
+AST Parsed     : 105/105 (100.00%)
+Positive Passed: 105/105 (100.00%)
+Negative Passed: 214/214 (100.00%)
 
   × Cannot assign to 'arguments' in strict mode
    ╭─[misc/fail/arguments-eval-ambient.ts:2:13]
@@ -450,6 +450,30 @@ Negative Passed: 210/210 (100.00%)
    ·                         ─────
    ╰────
   help: for octal literals use the '0o' prefix instead
+
+  × Keywords cannot contain escape characters
+   ╭─[misc/fail/escaped-import-phase-defer.js:1:8]
+ 1 │ import d\u0065fer * as ns from "m";
+   ·        ──────────
+   ╰────
+
+  × Keywords cannot contain escape characters
+   ╭─[misc/fail/escaped-import-phase-from.js:1:15]
+ 1 │ import source fr\u006fm "m";
+   ·               ─────────
+   ╰────
+
+  × Keywords cannot contain escape characters
+   ╭─[misc/fail/escaped-import-phase-source-from-binding.js:1:8]
+ 1 │ import s\u006furce from from "m";
+   ·        ───────────
+   ╰────
+
+  × Keywords cannot contain escape characters
+   ╭─[misc/fail/escaped-import-phase-source.js:1:8]
+ 1 │ import s\u006furce wasm from "m";
+   ·        ───────────
+   ╰────
 
   × Keywords cannot contain escape characters
    ╭─[misc/fail/escaped-type-import.ts:1:8]
